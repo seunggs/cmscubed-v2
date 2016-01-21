@@ -2,7 +2,7 @@ var path = require('path');
 var webpack = require('webpack');
 var autoprefixer = require('autoprefixer');
 var precss = require('precss');
-var postcssNext = require('postcss-next');
+var postcssCssnext = require('postcss-cssnext');
 var postcssImport = require('postcss-import');
 var postcssUrl = require('postcss-url');
 
@@ -16,8 +16,8 @@ var commonsPlugin = new webpack.optimize.CommonsChunkPlugin('common.js');
 
 module.exports = {
 	entry: {
-		public: path.resolve(__dirname, 'public', 'main.js'),
-		app: path.resolve(__dirname, 'app', 'main.js')
+		public: path.resolve(__dirname, 'root.js'),
+		app: [path.resolve(__dirname, 'app', 'index.js')]
 	},
 	output: {
 		path: path.resolve(__dirname, 'build'),
@@ -54,7 +54,7 @@ module.exports = {
       autoprefixer,
       precss,
       postcssImport({addDependencyTo: webpack}),
-      postcssNext(),
+      postcssCssnext(),
       postcssUrl()
     ];
   },

@@ -1,9 +1,9 @@
 :root {
   --font-family: 'acumin-pro', sans-serif;
-  --body-font-size: 110%;
-  --body-font-weight: 400;
-  --heading-font-weight: 600;
-  --bold-font-weight: 600;
-  --button-font-weight: 600;
-  --body-letter-spacing: 0.01rem;
+  --body-font-size: 105%;
+  --body-font-weight: 300;
+  --heading-font-weight: 300;
+  --bold-font-weight: 500;
+  --button-font-weight: 300;
+  --body-letter-spacing: 0.012rem;
 }

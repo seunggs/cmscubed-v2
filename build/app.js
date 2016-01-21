@@ -1,8 +1,9 @@
-webpackJsonp([0,2],[
+webpackJsonp([0],[
 /* 0 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
-	eval("\"use strict\";//@ sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IiIsImZpbGUiOiIwLmpzIiwic291cmNlUm9vdCI6IiJ9");
+	module.exports = __webpack_require__(1);
+
 
 /***/ }
 ]);

@@ -30,7 +30,7 @@
 /******/ 	// "0" means "already loaded"
 /******/ 	// Array means "loading", array contains callbacks
 /******/ 	var installedChunks = {
-/******/ 		2:0
+/******/ 		3:0
 /******/ 	};
 
 /******/ 	// The require function
@@ -76,7 +76,7 @@
 /******/ 			script.charset = 'utf-8';
 /******/ 			script.async = true;
 
-/******/ 			script.src = __webpack_require__.p + "" + chunkId + "." + ({"0":"app","1":"public"}[chunkId]||chunkId) + ".js";
+/******/ 			script.src = __webpack_require__.p + "" + chunkId + "." + ({"0":"app","2":"public"}[chunkId]||chunkId) + ".js";
 /******/ 			head.appendChild(script);
 /******/ 		}
 /******/ 	};
@@ -88,7 +88,15 @@
 /******/ 	__webpack_require__.c = installedModules;
 
 /******/ 	// __webpack_public_path__
-/******/ 	__webpack_require__.p = "/Users/slee/Documents/Projects/cmscubed/build";
+/******/ 	__webpack_require__.p = "/build/";
 /******/ })
 /************************************************************************/
-/******/ ([]);
+/******/ ([
+/* 0 */,
+/* 1 */
+/***/ function(module, exports, __webpack_require__) {
+
+	eval("'use strict';\n\nmodule.exports = {\n  path: 'app',\n  getComponent: function getComponent(location, cb) {\n    __webpack_require__.e/* nsure */(1, function (require) {\n      cb(null, __webpack_require__(2));\n    });\n  }\n};//@ sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly8vLi9hcHAvaW5kZXguanM/ZGFkYyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOztBQUFBLE9BQU8sT0FBUCxHQUFpQjtBQUNmLFFBQU0sS0FBTjtBQUNBLHNDQUFhLFVBQVUsSUFBSTtBQUN6Qix3Q0FBbUIsVUFBQyxPQUFELEVBQWE7QUFDOUIsU0FBRyxJQUFILEVBQVMsb0JBQVEsQ0FBUixDQUFULEVBRDhCO0tBQWIsQ0FBbkIsQ0FEeUI7R0FGWjtDQUFqQiIsImZpbGUiOiIxLmpzIiwic291cmNlc0NvbnRlbnQiOlsibW9kdWxlLmV4cG9ydHMgPSB7XG4gIHBhdGg6ICdhcHAnLFxuICBnZXRDb21wb25lbnQobG9jYXRpb24sIGNiKSB7XG4gICAgcmVxdWlyZS5lbnN1cmUoW10sIChyZXF1aXJlKSA9PiB7XG4gICAgICBjYihudWxsLCByZXF1aXJlKCcuL2NvbnRhaW5lcnMvQXBwJykpXG4gICAgfSlcbiAgfVxufVxuXG5cblxuLyoqIFdFQlBBQ0sgRk9PVEVSICoqXG4gKiogLi9hcHAvaW5kZXguanNcbiAqKi8iXSwic291cmNlUm9vdCI6IiJ9");
+
+/***/ }
+/******/ ]);

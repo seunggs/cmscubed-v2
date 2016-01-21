@@ -1,15 +1,16 @@
 import React, {Component} from 'react'
 
-class App extends Component {
+class Public extends Component {
   render () {
     return (
       <div className="container">
-        <div className="clearfix">
-          <div>Hello</div>
+        {/*<PublicNav />*/}
+        <div>
+          {this.props.children}
         </div>
       </div>
     )
   }
 }
 
-export default App
+export default Public
