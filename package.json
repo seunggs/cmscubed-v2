@@ -12,8 +12,10 @@
   "license": "ISC",
   "dependencies": {
     "basscss": "^7.1.0",
+    "history": "^1.17.0",
     "react": "^0.14.6",
-    "react-dom": "^0.14.6"
+    "react-dom": "^0.14.6",
+    "react-router": "^1.0.3"
   },
   "devDependencies": {
     "babel-core": "^6.4.5",
@@ -25,6 +27,7 @@
     "file-loader": "^0.8.5",
     "postcss": "^5.0.14",
     "postcss-cssnext": "^2.4.0",
+    "postcss-import": "^7.1.3",
     "postcss-loader": "^0.8.0",
     "precss": "^1.4.0",
     "style-loader": "^0.13.0",

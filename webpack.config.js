@@ -2,6 +2,9 @@ var path = require('path');
 var webpack = require('webpack');
 var autoprefixer = require('autoprefixer');
 var precss = require('precss');
+var postcssNext = require('postcss-next');
+var postcssImport = require('postcss-import');
+var postcssUrl = require('postcss-url');
 
 // definePlugin takes raw strings and inserts them, so you can put strings of JS if you want.
 var definePlugin = new webpack.DefinePlugin({
@@ -47,9 +50,16 @@ module.exports = {
 		]
 	},
 	postcss: function () {
-    return [autoprefixer, precss];
+    return [
+      autoprefixer,
+      precss,
+      postcssImport({addDependencyTo: webpack}),
+      postcssNext(),
+      postcssUrl()
+    ];
   },
 	resolve: {
+    modulesDirectories: ['node_modules', 'bower_components'],
     extensions: ['', '.js', '.json']
   },
   plugins: [definePlugin, commonsPlugin]

@@ -1,5 +1,13 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-import App from './App'
+import {Router, Route, Link} from 'react-router'
 
-ReactDOM.render(<App />, document.getElementById('app'))
+import '../assets/styles/main.css'
+
+import App from './containers/App'
+
+ReactDOM.render((
+  <Router>
+    <Route path="/" component={App}></Route>
+  </Router>
+), document.getElementById('app'))
