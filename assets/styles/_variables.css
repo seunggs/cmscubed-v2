@@ -1,9 +1,10 @@
 :root {
-  --font-family: 'acumin-pro', sans-serif;
-  --body-font-size: 105%;
-  --body-font-weight: 300;
-  --heading-font-weight: 300;
-  --bold-font-weight: 500;
+  --font-family: "pt-sans",sans-serif;
+  --body-font-size: 100%;
+  --body-font-weight: 400;
+  --heading-font-family: "brandon-grotesque",sans-serif;
+  --heading-font-weight: 400;
+  --bold-font-weight: 700;
   --button-font-weight: 300;
-  --body-letter-spacing: 0.012rem;
+  --body-letter-spacing: 0.01rem;
 }

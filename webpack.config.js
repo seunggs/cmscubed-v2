@@ -1,28 +1,26 @@
-var path = require('path');
-var webpack = require('webpack');
-var autoprefixer = require('autoprefixer');
-var precss = require('precss');
-var postcssCssnext = require('postcss-cssnext');
-var postcssImport = require('postcss-import');
-var postcssUrl = require('postcss-url');
+var path = require('path')
+var webpack = require('webpack')
+var autoprefixer = require('autoprefixer')
+var precss = require('precss')
+var postcssCssnext = require('postcss-cssnext')
+var postcssImport = require('postcss-import')
+var postcssUrl = require('postcss-url')
 
 // definePlugin takes raw strings and inserts them, so you can put strings of JS if you want.
 var definePlugin = new webpack.DefinePlugin({
   __DEV__: JSON.stringify(JSON.parse(process.env.BUILD_DEV || 'true')),
   __PRERELEASE__: JSON.stringify(JSON.parse(process.env.BUILD_PRERELEASE || 'false'))
-});
+})
 
-var commonsPlugin = new webpack.optimize.CommonsChunkPlugin('common.js');
+// fetchPlugin provides fetch polyfill
+var fetchPlugin = new webpack.ProvidePlugin({'fetch': 'imports?this=>global!exports?global.fetch!whatwg-fetch'})
 
 module.exports = {
-	entry: {
-		public: path.resolve(__dirname, 'root.js'),
-		app: [path.resolve(__dirname, 'app', 'index.js')]
-	},
+	entry: path.resolve(__dirname, 'main.js'),
 	output: {
 		path: path.resolve(__dirname, 'build'),
     publicPath: '/build/',
-		filename: '[name].js'
+		filename: 'main.js'
 	},
 	devServer: {
     host: '127.0.0.1',
@@ -56,11 +54,11 @@ module.exports = {
       postcssImport({addDependencyTo: webpack}),
       postcssCssnext(),
       postcssUrl()
-    ];
+    ]
   },
 	resolve: {
     modulesDirectories: ['node_modules', 'bower_components'],
     extensions: ['', '.js', '.json']
   },
-  plugins: [definePlugin, commonsPlugin]
+  plugins: [definePlugin, fetchPlugin]
 }
