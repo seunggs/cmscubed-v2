@@ -4,7 +4,7 @@ import ContentInputs from './components/ContentInputs'
 import {getPageContent} from '../utils/cmscubed/'
 
 const App = ({previewUrl, route, rootContent}) => {
-  let content = getPageContent(route, rootContent)
+  let content = getPageContent(route.path, rootContent)
 
   return (
     <div className="clearfix">

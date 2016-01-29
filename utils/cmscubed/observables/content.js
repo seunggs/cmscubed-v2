@@ -1,5 +1,5 @@
 import Rx from 'rx-lite'
-import config from '../config/'
+import socket from '../websocket/'
 
 export let contentHttp$ = Rx.Observable.create(observer => {
   let cancelled = false
@@ -22,7 +22,6 @@ export let contentHttp$ = Rx.Observable.create(observer => {
 })
 
 export let content$ = Rx.Observable.create(observer => {
-  const socket = io.connect(config.host + ':' + config.port)
   socket.on('content', content => {
     console.log('Content obj received from server through websockets', content)
     observer.onNext(content)

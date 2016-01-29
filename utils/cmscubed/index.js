@@ -8,7 +8,7 @@ import {
   convertPathToRoute,
   convertRouteToPath,
   getPageContent
-} from './utils/common'
+} from './utils/core'
 
 export {
   content$,
