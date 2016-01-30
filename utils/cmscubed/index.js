@@ -4,17 +4,33 @@ import {
 } from './observables/content'
 
 import {
-  convertQueryToPath,
-  convertPathToRoute,
-  convertRouteToPath,
-  getPageContent
+  convertQueryToPathArray,
+  convertPathArrayToRoute,
+  convertRouteToPathArray,
+  diffC3ObjKeysForAdding,
+  diffC3ObjKeysForRemoving,
+  convertContentToC3Obj,
+  convertC3ObjToContent,
+  getPageContent,
+  createRouteTree,
+  addPageContentToRootContent,
+  getContentKeysToAdd,
+  getContentKeysToRemove
 } from './utils/core'
 
 export {
   content$,
   contentHttp$,
-  convertQueryToPath,
-  convertPathToRoute,
-  convertRouteToPath,
-  getPageContent
+  convertQueryToPathArray,
+  convertPathArrayToRoute,
+  convertRouteToPathArray,
+  diffC3ObjKeysForAdding,
+  diffC3ObjKeysForRemoving,
+  convertContentToC3Obj,
+  convertC3ObjToContent,
+  getPageContent,
+  createRouteTree,
+  addPageContentToRootContent,
+  getContentKeysToAdd,
+  getContentKeysToRemove
 }

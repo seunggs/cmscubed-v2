@@ -1,12 +1,12 @@
 import path from 'path'
 import express from 'express'
 import {Server} from 'http'
-import config from './server/config'
+import config from './server/config/'
 import morgan from 'morgan'
 import bodyParser from 'body-parser'
 import methodOverride from 'method-override'
 import routes from './server/routes'
-import websockets from './server/websocket'
+import websockets from './server/config/websockets'
 
 const app = express()
 const server = Server(app)

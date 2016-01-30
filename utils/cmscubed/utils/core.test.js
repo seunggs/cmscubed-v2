@@ -11,7 +11,8 @@ import {
   createRouteTree,
   addPageContentToRootContent,
   getContentKeysToAdd,
-  getContentKeysToRemove
+  getContentKeysToRemove,
+  addKeysToC3Obj
 } from './core'
 
 test('convertPathArrayToRoute()', assert => {
@@ -43,7 +44,7 @@ test('convertContentToC3Obj()', assert => {
     heading: 'Home heading',
     about: {
       $type: 'route',
-      heading: 'About heading',
+      heading: 'About heading'
     },
     products: {
       heading: 'Products heading',
@@ -58,7 +59,7 @@ test('convertContentToC3Obj()', assert => {
     heading: 'Home heading',
     about: {
       $type: 'route',
-      heading: 'About heading',
+      heading: 'About heading'
     },
     products: {
       $type: 'route',
@@ -242,7 +243,7 @@ test('convertC3ObjToContent()', assert => {
     heading: 'Home heading',
     about: {
       $type: 'route',
-      heading: 'About heading',
+      heading: 'About heading'
     },
     products: {
       $type: 'route',
@@ -334,7 +335,7 @@ test('createRouteTree()', assert => {
     heading: 'Home heading',
     about: {
       $type: 'route',
-      heading: 'About heading',
+      heading: 'About heading'
     },
     products: {
       $type: 'route',
@@ -384,7 +385,7 @@ test('createRouteTree()', assert => {
     heading: 'Home heading',
     about: {
       $type: 'route',
-      heading: 'About heading',
+      heading: 'About heading'
     },
     products: {
       $type: 'route',
@@ -414,7 +415,7 @@ test('addPageContentToRootContent()', assert => {
     $type: 'route',
     about: {
       $type: 'route',
-      heading: 'About heading',
+      heading: 'About heading'
     },
     products: {
       $type: 'route',
@@ -437,7 +438,7 @@ test('addPageContentToRootContent()', assert => {
     $type: 'route',
     about: {
       $type: 'route',
-      heading: 'About heading',
+      heading: 'About heading'
     },
     products: {
       $type: 'route',
@@ -465,7 +466,7 @@ test('addPageContentToRootContent()', assert => {
     $type: 'route',
     about: {
       $type: 'route',
-      heading: 'About heading',
+      heading: 'About heading'
     }
   }
   const actual2 = addPageContentToRootContent(route, rootContent2, pageContent)
@@ -473,7 +474,7 @@ test('addPageContentToRootContent()', assert => {
     $type: 'route',
     about: {
       $type: 'route',
-      heading: 'About heading',
+      heading: 'About heading'
     },
     products: {
       pro: {
@@ -493,13 +494,13 @@ test('addPageContentToRootContent()', assert => {
 })
 
 test('getContentKeysToAdd()', assert => {
-  const route = ['products']
+  const route = '/products'
   const rootC3Obj = {
     $type: 'route',
     heading: 'Home heading',
     about: {
       $type: 'route',
-      heading: 'About heading',
+      heading: 'About heading'
     }
   }
   const schemaObj = {
@@ -523,7 +524,7 @@ test('getContentKeysToAdd()', assert => {
     heading: 'Home heading',
     about: {
       $type: 'route',
-      heading: 'About heading',
+      heading: 'About heading'
     },
     products: {
       $type: 'route',
@@ -544,17 +545,49 @@ test('getContentKeysToAdd()', assert => {
     (i.e. [pathArray, value]) that needs to be updated in the rootC3Obj if the
     page content already exists`)
 
+  /* -------------------- */
+
+  const route3 = '/products/pro'
+  const rootC3Obj3 = {
+    $type: 'route',
+    heading: 'Home heading',
+    about: {
+      $type: 'route',
+      heading: 'About heading'
+    },
+    products: {
+      $type: 'route',
+      heading: 'Products heading',
+      pro: {
+        $type: 'route',
+        heading: 'Pro heading'
+      }
+    }
+  }
+  const schemaObj3 = {
+    heading: 'Pro heading',
+    text: 'Pro text'
+  }
+  const actual3 = getContentKeysToAdd(route3, rootC3Obj3, schemaObj3)
+  const expected3 = [
+    [['products', 'pro', 'text'], 'Pro text']
+  ]
+
+  assert.deepEqual(actual3, expected3,
+    `getContentKeysToAdd() should output the right pathArray even with nested
+    routes`)
+
   assert.end()
 })
 
 test('getContentKeysToRemove()', assert => {
-  const route = ['products']
+  const route = '/products'
   const rootC3Obj = {
     $type: 'route',
     heading: 'Home heading',
     about: {
       $type: 'route',
-      heading: 'About heading',
+      heading: 'About heading'
     }
   }
   const schemaObj = {
@@ -574,7 +607,7 @@ test('getContentKeysToRemove()', assert => {
     heading: 'Home heading',
     about: {
       $type: 'route',
-      heading: 'About heading',
+      heading: 'About heading'
     },
     products: {
       $type: 'route',
@@ -594,6 +627,54 @@ test('getContentKeysToRemove()', assert => {
     `getContentKeysToRemove() should output an array of tuples
     (i.e. [pathArray, value]) that needs to be removed from the rootC3Obj if
     the page content already exists`)
+
+  assert.end()
+})
+
+test('addKeysToC3Obj()', assert => {
+  const keysToAdd = [
+    [['products', 'benefits'], ['Pro benefit 1', 'Pro benefit 2']],
+    [['products', 'pro'], { $type: 'route', heading: 'Pro heading' }]
+  ]
+  const rootC3Obj = {
+    $type: 'route',
+    heading: 'Home heading',
+    about: {
+      $type: 'route',
+      heading: 'About heading'
+    },
+    products: {
+      $type: 'route',
+      heading: 'Products heading',
+      text: 'Products text'
+    }
+  }
+  const actual = addKeysToC3Obj(keysToAdd, rootC3Obj)
+  const expected = {
+    $type: 'route',
+    heading: 'Home heading',
+    about: {
+      $type: 'route',
+      heading: 'About heading'
+    },
+    products: {
+      $type: 'route',
+      heading: 'Products heading',
+      text: 'Products text',
+      pro: {
+        $type: 'route',
+        heading: 'Pro heading'
+      },
+      benefits: [
+        'Pro benefit 1',
+        'Pro benefit 2'
+      ]
+    }
+  }
+
+  assert.deepEqual(actual, expected,
+    `Given an array of tuples (i.e. [pathArray, value]) and c3Obj,
+    addKeysToC3Obj() should return a new rootC3Obj with added keys`)
 
   assert.end()
 })

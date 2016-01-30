@@ -1,13 +1,29 @@
 import R from 'ramda'
-import socket from '../websocket/'
+import socket from '../config/websockets'
 
-/* Naming conventions:
+/* NAMING CONVENTIONS
   c3 object (i.e. rootC3Obj vs rootContent): proprietary object format that includes $type, and array as object with numeric keys
   route (i.e. '/products/hacker')
   path (i.e. '/' or 'hacker'): individual route node
   pathArray (i.e. ['products', 'hacker']): array of paths
   routeObj (i.e. {'home': {$type: 'route'}}): objects with {$type: 'route'}
   schemaObj: initial content objects whose keys only matter (not values) - this is NOT a c3Obj
+  changeObj: an object of mostly meta data inside DB for a changed route (for backup purposes)
+*/
+
+/* DATA FLOW
+  1) Developer flow:
+    Client (pageSchema -> list of add/remove paths in c3Obj format ([pathArray, c3ObjValue]))
+    -> Server (add/remove paths from relevant pageContents -> create an array of all routes to be updated in DB)
+    -> DB (update individual routes + add changeObj)
+  2) End user flow:
+    Client (pageContent -> pageC3Obj)
+    -> Server (convert pageC3Obj to {route: pageContent} for DB)
+    -> DB (update individual route + add changeObj)
+  3) DB to client flow:
+    DB (send all routes)
+    -> Server (convert to rootC3Obj)
+    -> Client (rootC3Obj)
 */
 
 const log = x => { console.log(x); return x }
@@ -160,17 +176,17 @@ export const addPageContentToRootContent = R.curry((route, rootContent, pageCont
 })
 
 // routeExists :: {*} -> String -> Boolean
-export const routeExists = R.curry((c3Obj, route) => {
+export const routeExists = (c3Obj, route) => {
   return R.compose(R.not, R.isNil, R.path(R.__, c3Obj), convertRouteToPathArray)(route)
-})
+}
 
-// TODO: add test
 // getContentKeysToAdd :: String -> {*} -> {*} -> [*]
 export const getContentKeysToAdd = R.curry((route, rootC3Obj, schemaObj) => {
   const pathArray = convertRouteToPathArray(route)
   if (routeExists(rootC3Obj, route)) {
     const pageC3Obj = R.path(pathArray, rootC3Obj)
-    return diffC3ObjKeysForAdding(pathArray, pageC3Obj, schemaObj)
+    const schemaC3Obj = R.merge(schemaObj, {$type: 'route'})
+    return diffC3ObjKeysForAdding(pathArray, pageC3Obj, schemaC3Obj)
   } else {
     // First add {$type: 'route'} to root of schemaObj
     const schemaC3Obj = R.merge(schemaObj, {$type: 'route'})
@@ -178,26 +194,39 @@ export const getContentKeysToAdd = R.curry((route, rootC3Obj, schemaObj) => {
   }
 })
 
-// TODO: add test
 // getContentKeysToRemove :: String -> {*} -> {*} -> [*]
 export const getContentKeysToRemove = R.curry((route, rootC3Obj, schemaObj) => {
   const pathArray = convertRouteToPathArray(route)
   if (routeExists(rootC3Obj, route)) {
     const pageC3Obj = R.path(pathArray, rootC3Obj)
-    return diffC3ObjKeysForRemoving(pathArray, pageC3Obj, schemaObj)
+    const schemaC3Obj = R.merge(schemaObj, {$type: 'route'})
+    return diffC3ObjKeysForRemoving(pathArray, pageC3Obj, schemaC3Obj)
   } else {
     return null
   }
 })
 
-// TODO: add test
-// setContentSchema :: String -> {*} -> {*} -> IMPURE (Send socket.io event)
-export const setContentSchema = R.curry((route, rootC3Obj, schemaObj) => {
-  const contentKeysToAdd = getContentKeysToAdd(route, pageC3Obj, schemaObj)
-  const contentKeysToRemove = getContentKeysToRemove(route, pageC3Obj, schemaObj)
-  if (!R.nil(contentKeysToAdd)) { socket.emit('addContentKeys', contentKeysToAdd) }
-  if (!R.nil(contentKeysToRemove)) { socket.emit('removeContentKeys', contentKeysToRemove) }
+// addKeysToC3Obj :: [*] -> {*} -> {*}
+export const addKeysToC3Obj = R.curry((keysToAdd, rootC3Obj) => {
+  const newRootC3Obj = keysToAdd.reduce((prev, curr) => {
+    const pathArray = R.head(curr)
+    const value = R.last(curr)
+    return R.assocPath(pathArray, value, prev)
+  }, rootC3Obj)
+  return newRootC3Obj
 })
+
+/* --- IMPURE --------------------------------------------------------------- */
+
+// TODO: add test
+// setContentSchema :: String -> {*} -> {*} -> IMPURE (Send socket.io events)
+export const setContentSchema = R.curry((route, rootC3Obj, schemaObj) => {
+  const contentKeysToAdd = getContentKeysToAdd(route, rootC3Obj, schemaObj)
+  const contentKeysToRemove = getContentKeysToRemove(route, rootC3Obj, schemaObj)
+  if (!R.isNil(contentKeysToAdd) && !R.isEmpty(contentKeysToAdd)) { socket.emit('addContentKeys', contentKeysToAdd) }
+  if (!R.isNil(contentKeysToRemove) && !R.isEmpty(contentKeysToRemove)) { socket.emit('removeContentKeys', contentKeysToRemove) }
+})
+
 
 // TODO: remove it later
 const testEntry2 = {

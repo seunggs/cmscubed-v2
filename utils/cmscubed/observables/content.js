@@ -1,5 +1,5 @@
 import Rx from 'rx-lite'
-import socket from '../websocket/'
+import socket from '../config/websockets'
 
 export let contentHttp$ = Rx.Observable.create(observer => {
   let cancelled = false
