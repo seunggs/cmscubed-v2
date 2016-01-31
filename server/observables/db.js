@@ -19,34 +19,42 @@ export const rootC3ObjFromDB$ = Rx.Observable.create(observer => {
   return () => console.log('Disposed')
 })
 
-// TODO: delete this - example data structure inside contents table
-const exDbDataStructure = {
-  user1: {
+
+// REFERENCE ONLY - example data structure inside DB contents table
+const exDbContentDataStructure = {
+  project1: {
     "en-US": {
       content: {
-        "$global": {
-          cta: 'Free trial'
+        $global: {
+          cta: "Free trial"
         },
-        "/": {
-          heading: 'Home heading'
+        webContent: {
+          "/": {
+            heading: "Home heading"
+          },
+          "/products": {
+            heading: "Products heading",
+            text: "Products text"
+          },
+          "/products/pro": {
+            heading: "Pro heading"
+          }
         },
-        "/products": {
-          heading: 'Products heading',
-          text: 'Products text'
-        },
-        "/products/pro": {
-          heading: 'Pro heading'
+        blogContent: {
+          "/blog": {
+            heading: "Blog heading"
+          }
         }
       },
       changes: {
         1: {
-          backupType: 'manual', // 'manual' or 'auto'
-          changeType: 'schema', // 'schema' or 'content'
+          backupType: "manual", // "manual" or "auto"
+          changeType: "schema", // "schema" or "content"
           changeTime: 1454170581,
-          user: 'blah@gmail.com',
-          updatedRoute: '/products',
+          user: "blah@gmail.com",
+          updatedRoute: "/products",
           prevContent: {
-            heading: 'Products heading'
+            heading: "Products heading"
           }
         }
       }

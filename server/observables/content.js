@@ -12,9 +12,6 @@ contentKeysToAdd$ = Rx.Observable.create(observer => {
 })
 
 contentKeysToAdd$.subscribe(keysToAdd => {
-  rootC3ObjFromDB$.subscribe(rootC3ObjFromDB => {
-    
-  })
   const newRootC3Obj = addKeysToC3Obj(keysToAdd, rootC3Obj)
 
   // add to DB
