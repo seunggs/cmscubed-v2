@@ -6,22 +6,22 @@ import socket from '../config/websockets'
   path (i.e. '/' or 'hacker'): individual route node
   pathArray (i.e. ['products', 'hacker']): array of paths
   schemaObj: initial content objects whose keys only matter (not values)
-  routePageContentPair: [route, pageContent] pair for transfer between client, server, and DB
+  routePageContentPair: [route, pageContent] pair of route and pageContent obj for transfer between client, server, and DB
   changeObj: an object of mostly meta data inside DB for a changed route (for backup purposes)
 */
 
 /* DATA FLOW
   1) Developer flow:
-    Client (pageSchema -> routePageContentPair (i.e. [route, pageContent]))
+    Client (pageContentSchema -> routePageContentPair (i.e. [route, pageContent]))
     -> Server (pass through to DB)
-    -> DB (update individual routes + add changeObj)
+    -> DB (update route + add changeObj)
   2) End user flow:
     Client (pageContent -> routePageContentPair (i.e. [route, pageContent]))
     -> Server (pass through to DB)
-    -> DB (update individual route + add changeObj)
+    -> DB (update route + add changeObj)
   3) DB to client flow:
     DB (send all routes in a given entry point)
-    -> Server (convert an array of routePageContentPair (i.e. [route, pageContent]) to rootContent)
+    -> Server (pass through to client)
     -> Client (rootContent)
 */
 
@@ -76,154 +76,20 @@ export const getUpdatedPageContentFromSchemaChange = R.curry((currentPageContent
   return R.isNil(currentPageContent) ? newSchemaObj : deepCopyValues(currentPageContent, newSchemaObj)
 })
 
-// // diffKeysForAdding :: [*] -> {*} -> {*} -> [*]
-// export const diffKeysForAdding = R.curry((pathArray, oldObj, newObj) => {
-//   const oldObjKeys = R.keys(oldObj)
-//   const newObjKeys = R.keys(newObj)
-//   const keysToBeAdded = R.difference(newObjKeys, oldObjKeys)
-//   const intersectionKeys = R.intersection(oldObjKeys, newObjKeys)
-//   const intersectionChildRouteKeys = intersectionKeys
-//     .filter(key => R.whereEq({$type: 'route'}, newObj[key]))
-//
-//   const childRouteKeysForAdding = R.chain(key => {
-//     return diffKeysForAdding(R.append(key, pathArray), oldObj[key], newObj[key])
-//   })(intersectionChildRouteKeys)
-//
-//   const tuplesForAdding = keysToBeAdded.map(key => [R.append(key, pathArray), newObj[key]])
-//   return R.concat(tuplesForAdding, childRouteKeysForAdding)
-// })
-//
-// // diffKeysForRemoving :: [*] -> {*} -> {*} -> [*]
-// export const diffKeysForRemoving = R.curry((pathArray, oldObj, newObj) => {
-//   const oldObjKeys = R.keys(oldObj)
-//   const newObjKeys = R.keys(newObj)
-//   const keysToBeRemoved = R.difference(oldObjKeys, newObjKeys)
-//   const intersectionKeys = R.intersection(oldObjKeys, newObjKeys)
-//   const intersectionChildRouteKeys = intersectionKeys
-//     .filter(key => R.whereEq({$type: 'route'}, newObj[key]))
-//
-//   const childRouteTuplesForRemoving = R.chain(key => {
-//     return diffKeysForRemoving(R.append(key, pathArray), oldObj[key], newObj[key])
-//   })(intersectionChildRouteKeys)
-//
-//   const tuplesForRemoving = keysToBeRemoved.map(key => [R.append(key, pathArray), oldObj[key]])
-//   return R.concat(tuplesForRemoving, childRouteTuplesForRemoving)
-// })
-//
-// // convertContentToC3Obj :: String -> {*} -> {*}
-// // caveat: this func will only convert the objects along the given route, not the entire given content object
-// export const convertContentToC3Obj = R.curry((route, content) => {
-//   // addRouteType :: String -> {*} -> {*}
-//   const addRouteType = R.curry((route, rootContent) => {
-//     const pathArray = convertRouteToPathArray(route)
-//     const progressivePathList = R.scan((prev, curr) => {
-//       return prev.concat(curr)
-//     }, [])(pathArray)
-//
-//     // add {$type: route} along the path
-//     const newRootContent = R.reduce((prev, curr) => {
-//       return R.assocPath(curr.concat('$type'), 'route', prev)
-//     }, rootContent)(progressivePathList)
-//     return newRootContent
-//   })
-//
-//   const c3Obj = addRouteType(route, content)
-//   return c3Obj
-// })
-//
-// // convertC3ObjToContent :: String -> {*} -> {*}
-// export const convertC3ObjToContent = R.curry(c3Obj => {
-//   // removeRouteType :: String -> {*} -> {*}
-//   // Recursively removes all {$type: 'route'} in a given object
-//   const removeRouteType = R.curry(c3Obj => {
-//     // Omit {$type: 'route'} on this level only
-//     const allKeys = R.keys(c3Obj)
-//     const keysWithoutRouteType = R.reject(key => key === '$type' && c3Obj[key] === 'route', allKeys)
-//     const content = keysWithoutRouteType.reduce((prev, curr) => {
-//       return R.merge(prev, {[curr]: c3Obj[curr]})
-//     }, {})
-//
-//     // get child routes
-//     const contentKeys = R.keys(content)
-//     const childRouteKeys = contentKeys
-//       .filter(key => R.whereEq({$type: 'route'}, content[key]))
-//     const childRoutes = childRouteKeys.map(key => {return {[key]: content[key]}})
-//
-//     // Omit {$type: 'route'} on all child routes
-//     const finalContent = childRouteKeys
-//       .map(key => {return {[key]: removeRouteType(content[key])}})
-//       .reduce((prev, curr) => {
-//         const childRouteKey = R.keys(curr)
-//         return R.merge(prev, {[childRouteKey]: curr[childRouteKey]})
-//       }, content)
-//     return finalContent
-//   })
-//
-//   return removeRouteType(c3Obj)
-// })
-
 // getPageContent :: String -> {*} -> {*}
 export const getPageContent = R.curry((route, rootContent) => {
   const pageContent = R.prop(route, rootContent)
   return pageContent
 })
 
+// createRoutePageContentPair :: String -> {*} -> [*]
+export const createRoutePageContentPair = R.curry((route, pageContent) => {
+
+})
+
 // createRouteTree :: String -> {*} -> [*]
 export const createRouteTree = R.curry(rootC3Obj => {
-})
 
-// // addPageContentToRootContent :: String -> {*} -> {*} -> {*}
-// export const addPageContentToRootContent = R.curry((route, rootContent, pageContent) => {
-//   const pathArray = convertRouteToPathArray(route)
-//   const newRootContent = R.assocPath(pathArray, pageContent, rootContent)
-//   return newRootContent
-// })
-
-// // routeExists :: {*} -> String -> Boolean
-// export const routeExists = (c3Obj, route) => {
-//   return R.compose(R.not, R.isNil, R.path(R.__, c3Obj), convertRouteToPathArray)(route)
-// }
-
-// getContentKeysToAdd :: String -> {*} -> {*} -> [*]
-export const getContentKeysToAdd = R.curry((route, rootContentObj, schemaObj) => {
-  const pathArray = convertRouteToPathArray(route)
-  if (routeExists(rootContentObj, route)) {
-    const pageC3Obj = R.path(pathArray, rootContentObj)
-    const schemaC3Obj = R.merge(schemaObj, {$type: 'route'})
-    return diffC3ObjKeysForAdding(pathArray, pageC3Obj, schemaC3Obj)
-  } else {
-    // First add {$type: 'route'} to root of schemaObj
-    const schemaC3Obj = R.merge(schemaObj, {$type: 'route'})
-    return [[pathArray, schemaC3Obj]]
-  }
-})
-
-// getContentKeysToRemove :: String -> {*} -> {*} -> [*]
-export const getContentKeysToRemove = R.curry((route, rootContentObj, schemaObj) => {
-  const pathArray = convertRouteToPathArray(route)
-  if (routeExists(rootContentObj, route)) {
-    const pageC3Obj = R.path(pathArray, rootContentObj)
-    const schemaC3Obj = R.merge(schemaObj, {$type: 'route'})
-    return diffC3ObjKeysForRemoving(pathArray, pageC3Obj, schemaC3Obj)
-  } else {
-    return null
-  }
-})
-
-// isRouteTuple :: [*] -> Boolean
-export const isRouteTuple = R.curry(tuple => {
-  const c3ObjValue = R.last(tuple)
-  return R.whereEq({$type: 'route'}, c3ObjValue)
-})
-
-// addKeysToC3Obj :: [*] -> {*} -> {*}
-export const addKeysToC3Obj = R.curry((keysToAdd, rootC3Obj) => {
-  const newRootC3Obj = keysToAdd.reduce((prev, curr) => {
-    const pathArray = R.head(curr)
-    const value = R.last(curr)
-    return R.assocPath(pathArray, value, prev)
-  }, rootC3Obj)
-  return newRootC3Obj
 })
 
 /* --- IMPURE --------------------------------------------------------------- */
