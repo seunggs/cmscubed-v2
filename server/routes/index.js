@@ -21,7 +21,7 @@ router.use('/api', api)
 
 // default to client routing for all others
 router.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../index.html'))
+  res.sendFile(path.resolve(__dirname, '../../index.html'))
 })
 
 export default router

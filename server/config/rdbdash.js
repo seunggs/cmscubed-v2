@@ -1,12 +1,14 @@
 import rethinkdbdash from 'rethinkdbdash'
-import config from '../config/'
+import config from '../../server-config'
 
-const r = rethinkdbdash({
+const rdb = rethinkdbdash({
+	host: config.rethinkdb.host,
+	port: config.rethinkdb.port,
 	db: config.rethinkdb.db,
-	servers: [{
-		host: config.rethinkdb.host,
-		port: config.rethinkdb.port
-	}]
-});
+	authKey: config.rethinkdb.authkey,
+	ssl: {
+		ca: config.rethinkdb.caCert
+	},
+})
 
-export default r
+export default rdb

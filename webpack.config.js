@@ -24,7 +24,8 @@ module.exports = {
 	},
 	devServer: {
     host: '127.0.0.1',
-		port: 3333
+		port: 3333,
+    historyApiFallback: true
 	},
   devtool: 'eval-source-map',
 	module: {
@@ -37,6 +38,10 @@ module.exports = {
 					presets: ['es2015', 'react']
 				}
 			},
+      {
+        test:   /\.json$/,
+        loader: "json-loader"
+      },
 			{
         test:   /\.css$/,
         loader: "style-loader!css-loader!postcss-loader"
@@ -44,7 +49,17 @@ module.exports = {
 			{
 				test: /\.(png|jpg|gif|svg|woff|ttf|otf|eot)$/,
 				loader: 'url-loader?limit=8192'
-			}
+			},
+      {
+        test: /node_modules\/auth0-lock\/.*\.js$/,
+        loaders: [
+          'transform-loader/cacheable?brfs',
+          'transform-loader/cacheable?packageify'
+        ]
+      }, {
+        test: /node_modules\/auth0-lock\/.*\.ejs$/,
+        loader: 'transform-loader/cacheable?ejsify'
+      }
 		]
 	},
 	postcss: function () {
