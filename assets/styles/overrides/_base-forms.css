@@ -1,0 +1,43 @@
+input[type=text],
+input[type=date],
+input[type=datetime],
+input[type=datetime-local],
+input[type=email],
+input[type=month],
+input[type=number],
+input[type=password],
+input[type=search],
+input[type=tel],
+input[type=time],
+input[type=url],
+input[type=week] {
+  height: var(--c3-form-field-height);
+  padding: var(--c3-form-field-padding-y) var(--c3-form-field-padding-x);
+}
+
+[contenteditable=true] {
+  padding: var(--c3-editor-field-padding-top) var(--c3-editor-field-padding-right) var(--c3-editor-field-padding-bottom) var(--c3-editor-field-padding-left);
+}
+
+.input-group {
+  position: relative;
+  margin-top: 1rem;
+  padding-bottom: 0.75rem;
+}
+.c3-label {
+  color: var(--c3-form-label-font-color);
+  font-size: var(--c3-form-label-font-size);
+  position: absolute;
+  pointer-events: none;
+  left: 10px;
+  top: var(--c3-form-field-padding-y);
+  transition: 0.2s ease all;
+}
+
+/* active state */
+input:focus ~ .c3-label, input:valid ~ .c3-label {
+  top: -20px;
+  left: 5px;
+  font-size: var(--c3-form-label-active-font-size);
+  color: var(--c3-form-label-active-font-color);
+}

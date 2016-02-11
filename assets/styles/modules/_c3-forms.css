@@ -1,0 +1,30 @@
+.c3-field {
+  outline: none;
+  border-style: solid;
+  border-width: var(--border-width);
+  border-color: var(--border-color);
+  border-radius: var(--border-radius);
+}
+
+.c3-field:focus,
+.c3-field.is-focused {
+  outline: none;
+  border-color: var(--c3-field-focus-color);
+  border-width: var(--border-width);
+  box-shadow: 0 0 0 1px var(--c3-field-focus-color);
+  transition: 0.2s ease all;
+}
+
+.c3-field:disabled,
+.c3-field.is-disabled {
+  background-color: var(--darken-2);
+  opacity: .5;
+}
+
+.c3-field-loading-icon {
+  position: absolute;
+  right: 6px;
+  top: 7px;
+  width: 28px;
+  height: 28px;
+}

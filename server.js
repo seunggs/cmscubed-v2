@@ -9,7 +9,7 @@ import routes from './server/routes'
 import socketIo from 'socket.io'
 import websockets from './server/websockets/'
 import {getRouteContentFromDB, getPageContentFromDB} from './server/utils/db'
-import {convertDBContentObjsToContent} from './modules/cmscubed/core'
+import {convertDBContentObjsToContent} from './modules/core/content'
 
 const app = express()
 const server = Server(app)

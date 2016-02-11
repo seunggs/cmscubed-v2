@@ -18,6 +18,8 @@ export const contentUpdate$ = Rx.Observable.create(observer => {
   }
 })
 
+// This is for realtime update of the content for preview only
+// As such, it doesn't need to hit DB
 export const pageFieldUpdate$ = Rx.Observable.create(observer => {
   let cancelled = false
   if (!cancelled) {

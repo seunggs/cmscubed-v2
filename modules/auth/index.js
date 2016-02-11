@@ -1,5 +1,4 @@
 import socket from '../websockets/'
-import {projectName$} from '../observables/auth'
 
 /* --- IMPURE --------------------------------------------------------------- */
 
@@ -25,22 +24,6 @@ export const loggedIn = () => {
   const idToken = window.localStorage.getItem('userToken')
   return !idToken ? false : true
 }
-
-// // checkSetupComplete :: {*} -> ({*} -> IMPURE) -> (() -> *) -> IMPURE
-// export const checkSetupComplete = (nextState, replace, cb) => {
-//   socket.emit('projectName:get', userEmail)
-//   projectName$.subscribe(projectName => {
-//     if (!projectName) {
-//       cb()
-//     } else {
-//       replace({
-//         pathname: '/edit',
-//         state: { nextPathname: nextState.location.pathname }
-//       })
-//       cb()
-//     }
-//   })
-// }
 
 // requireAuth :: {*} -> ({*} -> IMPURE) -> IMPURE
 export const requireAuth = (nextState, replace) => {

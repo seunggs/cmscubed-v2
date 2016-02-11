@@ -49,7 +49,7 @@ const exUsersDBEntry = {
   lastName: "Smith"
 }
 
-const exSettingsDBEntry = {
+const exProjectsDBEntry = {
   project: 'Project Name',
   users: ['blah@gmail.com', 'blahblah@gmail.com'],
   locales: ["en-US", "fr-FR"],

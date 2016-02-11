@@ -1,6 +1,7 @@
 import React from 'react'
 
-export default ({children}) => {
-  console.log('Main rendered')
+const Main = ({children}) => {
   return <div>{children}</div>
 }
+
+export default Main

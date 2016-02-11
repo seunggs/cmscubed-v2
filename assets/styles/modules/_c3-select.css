@@ -1,0 +1,108 @@
+/* select box styling */
+.c3-select {
+  display: block;
+  height: var(--c3-form-field-height);
+  cursor: pointer;
+  transition: 0.2s ease all;
+  color: var(--body-color);
+}
+
+[data-c3-select-focused="true"] {
+  background-color: var(--purplish);
+  color: var(--white);
+}
+
+/* label styling */
+.c3-select-label {
+  color: var(--c3-form-label-font-color);
+  font-size: var(--c3-form-label-font-size);
+  position: absolute;
+  pointer-events: none;
+  top: var(--c3-form-field-padding-y);
+  left: 10px;
+  transition: 0.2s ease all;
+}
+
+[data-c3-select-focused="true"] ~ .c3-select-label {
+  top: -20px;
+  left: 5px;
+  font-size: var(--c3-form-label-active-font-size);
+  color: var(--c3-form-label-active-font-color);
+}
+
+[data-c3-select-empty="false"] ~ .c3-select-label {
+  top: -20px;
+  left: 5px;
+  font-size: var(--c3-form-label-active-font-size);
+  color: var(--c3-form-label-active-font-color);
+}
+
+/* caret styling */
+.c3-select-caret {
+  position: absolute;
+  right: 6px;
+  top: 8px;
+  fill: #bbb;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  transition: 0.2s ease all;
+  pointer-events: none;
+}
+
+.c3-select:focus .c3-select-caret-svg-path, .c3-select:active .c3-select-caret-svg-path {
+  fill: var(--c3-field-focus-color);
+}
+
+[data-c3-select-focused="true"] > .c3-select-caret {
+  transform: rotate(180deg);
+}
+
+.c3-select-caret-svg-path {
+  fill: #bbb;
+}
+
+[data-c3-select-focused="true"] .c3-select-caret-svg-path {
+  fill: var(--white) !important;
+}
+
+/* option group styling */
+.c3-option-group {
+  position: absolute;
+  top: var(--c3-form-field-height);
+  left: -2px;
+  margin-top: -2px;
+  visibility: hidden;
+  opacity: 0;
+  background-color: var(--purplish);
+  border-style: solid;
+  border-width: var(--border-active-width);
+  border-color: var(--c3-field-focus-color);
+  border-top-left-radius: 0px;
+  border-top-right-radius: 0px;
+  border-bottom-left-radius: var(--border-radius);
+  border-bottom-right-radius: var(--border-radius);
+  transition: 0.2s ease all;
+}
+
+[data-c3-select-focused="true"] > .c3-option-group {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* option styling */
+.c3-option {
+  color: var(--white);
+  height: calc(var(--c3-form-field-height)/2);
+  padding: var(--c3-form-field-padding-y) var(--c3-form-field-padding-x);
+}
+
+.c3-option:hover {
+  box-shadow: inset 0 0 0 20rem var(--darken-1);
+}
+
+.c3-option-selected {
+  position: absolute;
+  top: var(--c3-form-field-padding-y);
+  left: 10px;
+}

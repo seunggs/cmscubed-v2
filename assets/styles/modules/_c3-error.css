@@ -1,0 +1,13 @@
+.c3-error-group {
+  position: relative;
+  margin-top: 4px;
+  margin-left: 5px;
+}
+
+.c3-error {
+  opacity: 0;
+  transform: scale(0);
+  transform-origin: top left;
+  color: var(--red);
+  font-size: var(--c3-form-label-active-font-size);
+}

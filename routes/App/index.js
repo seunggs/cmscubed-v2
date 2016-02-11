@@ -1,9 +1,14 @@
 import React from 'react'
+import RouteTransition from '../shared/RouteTransition'
 
-export default ({children}) => {
+const App = ({children, location}) => {
   return (
     <div>
-      {children}
+      <RouteTransition pathname={location.pathname}>
+        {children}
+      </RouteTransition>
     </div>
   )
 }
+
+export default App

@@ -1,7 +1,7 @@
 import React from 'react'
 import {loggedIn} from '../../../modules/auth/'
 
-export default ({lock}) => {
+const Register = ({lock}) => {
   if (loggedIn()) {
     history.replace('/main')
   } else {
@@ -13,6 +13,8 @@ export default ({lock}) => {
     }
     lock.showSignup(lockOptions, () => console.log('lock opened'))
   }
-  
+
   return <div></div>
 }
+
+export default Register

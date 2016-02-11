@@ -1,0 +1,16 @@
+.btn {
+  font-size: var(--button-font-size);
+  text-transform: var(--button-text-transform);
+  font-weight: var(--button-font-weight);
+  letter-spacing: var(--button-letter-spacing);
+  padding: var(--button-padding-top) var(--button-padding-right) var(--button-padding-bottom) var(--button-padding-left);
+}
+
+.btn-primary {
+  background-color: var(--button-background-color);
+}
+
+.btn[data-disabled="true"] {
+  opacity: .5;
+  pointer-events: none;
+}

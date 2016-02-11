@@ -1,9 +1,9 @@
 import React from 'react'
 import {loggedIn} from '../../../modules/auth/'
 
-export default ({lock, history}) => {
+const Login = ({lock, history, children}) => {
   if (loggedIn()) {
-    history.replace('/main')
+    history.replace('/loggedin')
   } else {
     const lockOptions = {
       callbackURL: 'http://127.0.0.1:3333/loggedin',
@@ -12,8 +12,10 @@ export default ({lock, history}) => {
       disableSignupAction: true,
       closable: false
     }
-    lock.show(lockOptions)    
+    lock.show(lockOptions)
   }
 
   return <div></div>
 }
+
+export default Login

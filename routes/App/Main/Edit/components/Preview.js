@@ -1,6 +1,7 @@
 import React from 'react'
 
 const Preview = ({previewUrl}) => {
+  console.log('previewUrl: ', previewUrl)
   const iframeStr = '<iframe src="' + previewUrl + '" class="preview"></iframe>'
 
   return (

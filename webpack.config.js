@@ -25,9 +25,9 @@ module.exports = {
 	devServer: {
     host: '127.0.0.1',
 		port: 3333,
-    historyApiFallback: true
+    historyApiFallback: true // required to use browserHistory (i.e. no hash) for react-router
 	},
-  devtool: 'eval-source-map',
+  devtool: 'eval-source-map', // turn off for production build
 	module: {
 		loaders: [
 			{

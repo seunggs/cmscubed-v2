@@ -13,7 +13,7 @@ import {
 } from '../utils/db'
 import {
   convertDBContentObjsToContent
-} from '../../modules/cmscubed/core'
+} from '../../modules/core/content'
 
 export default () => {
   contentUpdate$.subscribe(oldNewContentPair => {
@@ -53,12 +53,11 @@ export default () => {
   })
 
   pageFieldUpdate$.subscribe(data => {
-
+    io.emit('pageContentField:updateFromServer', data)
   })
 
   contentChangesFromDB$.subscribe(dbContentObjs => {
     const content = convertDBContentObjsToContent(dbContentObjs)
     io.emit('routeContent:fromDB', content)
   })
-
 }
