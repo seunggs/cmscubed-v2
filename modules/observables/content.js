@@ -10,7 +10,23 @@ import R from 'ramda'
   - Handle any errors from server/DB
 */
 
-export const content$ = Rx.Observable.create(observer => {
+export const initRouteContent$$ = (project, route) => {
+  return Rx.Observable.create(observer => {
+    let cancelled = false
+    if (!cancelled) {
+      socket.emit('routeContent:get', {project, route})
+      socket.on('routeContent:fromDB', content => {
+        observer.onNext(content)
+      })
+    }
+    return () => {
+      cancelled = true
+      console.log('initRouteContent$ disposed')
+    }
+  })
+}
+
+export const routeContentFromDB$ = Rx.Observable.create(observer => {
   let cancelled = false
   if (!cancelled) {
     socket.on('routeContent:fromDB', content => {
@@ -21,6 +37,10 @@ export const content$ = Rx.Observable.create(observer => {
   return () => {
     // socket.disconnect()
     cancelled = true
-    console.log('Content socket.io event disposed')
+    console.log('routeContentFromDB$ disposed')
   }
 }).scan(R.merge)
+
+export const content$ = Rx.Observable.merge(
+  routeContentFromDB$
+)

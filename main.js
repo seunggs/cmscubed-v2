@@ -6,6 +6,7 @@ import Rx from 'rx-lite'
 import R from 'ramda'
 import Auth0Lock from 'auth0-lock'
 import {setIdToken, getIdToken, requireAuth} from './modules/auth/'
+import socket from './modules/websockets/'
 
 import {content$} from './modules/observables/content'
 import {state$} from './modules/observables/state'
@@ -19,11 +20,10 @@ import Register from './routes/App/Register/'
 import Main from './routes/App/Main/'
 import Edit from './routes/App/Main/Edit/'
 import Setup from './routes/App/Main/Setup/'
-
-const previewUrl = 'https://www.terapeak.com/'
+import Dashboard from './routes/App/Main/Dashboard/'
 
 // combine content$ and states$
-const app$ = Rx.Observable.merge(content$, state$)
+const app$ = Rx.Observable.combineLatest(content$, state$)
 
 const routes = (
   <Route path="/" component={App}>
@@ -32,6 +32,7 @@ const routes = (
     <Route path="register" component={Register} />
     <Route path="main" component={Main} onEnter={requireAuth}>
       <Route path="/setup" component={Setup} />
+      <Route path="/dashboard" component={Dashboard} />
       <Route path="/edit/:page" component={Edit} />
     </Route>
   </Route>
@@ -40,21 +41,20 @@ const routes = (
 app$.subscribe(change => {
   // TODO: createElement runs three times - why??
   const createElement = (Component, props) => {
-    if (isContent(change)) {
-      props.rootContent = change
-      console.log('content changed! ', props.rootContent)
-    } else {
-      props.rootState = change
-      console.log('state changed! ', props.rootState)
-    }
-    // props.previewUrl = previewUrl
-    props.lock = new Auth0Lock('KWe4lMDVwFR9GPquF4yuZ327Xg2sXt1p', 'cmscubed.auth0.com')
-    return <Component {...props} />
+    const rootContent = change[0]
+    const rootState = change[1]
+    console.log('content changed! ', rootContent)
+    console.log('state changed! ', rootState)
+    const lock = new Auth0Lock('KWe4lMDVwFR9GPquF4yuZ327Xg2sXt1p', 'cmscubed.auth0.com')
+    return <Component {...props} rootContent={rootContent} rootState={rootState} lock={lock} />
   }
   render((
     <Router routes={routes} createElement={createElement} history={browserHistory} />
   ), document.getElementById('app'))
 })
+
+// initialize state
+sendStateChangeEvent('global', {})
 
 // CustomEvents polyfill for IE
 (function () {

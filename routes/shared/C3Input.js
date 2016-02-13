@@ -3,11 +3,16 @@ import R from 'ramda'
 import Rx from 'rx-lite'
 import {sendStateChangeEvent} from '../../modules/events/state'
 import {projectNameAvailable$} from '../../modules/observables/ui'
+import {getElemState} from '../../modules/core/state'
 import C3Error from './C3Error'
 
 const C3Input = React.createClass({
+  getState() {
+    const {id, rootState} = this.props
+    return getElemState(id, rootState)
+  },
   shouldComponentUpdate(nextProps) {
-    return !R.equals(nextProps.elemState, this.props.elemState)
+    return !R.equals(nextProps.rootState, this.props.rootState)
   },
   handleBlur(e) {
     const {id, validators, asyncValidator} = this.props
@@ -50,8 +55,8 @@ const C3Input = React.createClass({
   },
   render() {
     console.log('C3Input rendered')
-    const {id, name, labelText, autoFocus, elemState, validators = []} = this.props
-    const {errorMsgs = [], isValid = 'null', isTouched = 'false', inputValue, buttonLoading = 'false'} = elemState
+    const {id, name, labelText, autoFocus, rootState, validators = []} = this.props
+    const {errorMsgs = [], isValid = 'null', isTouched = 'false', inputValue, buttonLoading = 'false'} = this.getState()
     return (
       <div className="input-group">
         <input id={id}
@@ -61,7 +66,6 @@ const C3Input = React.createClass({
                className="c3-field block col-12"
                data-value={inputValue}
                onBlur={this.handleBlur}
-               onChange={this.handleChange}
                data-is-touched={isTouched}
                data-is-valid={isValid}
                autoFocus={autoFocus}
@@ -81,7 +85,7 @@ const C3Input = React.createClass({
 C3Input.propTypes = {
   id: React.PropTypes.string.isRequired,
   name: React.PropTypes.string.isRequired,
-  elemState: React.PropTypes.object.isRequired,
+  rootState: React.PropTypes.object.isRequired,
   labelText: React.PropTypes.string.isRequired,
   validators: React.PropTypes.array,
   asyncValidator: React.PropTypes.object,

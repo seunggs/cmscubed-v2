@@ -1,15 +1,14 @@
 import test from 'tape'
 import sinon from 'sinon'
 import {
-  convertQueryToPathArray,
-  convertPathArrayToRoute,
   convertRouteToPathArray,
+  convertRouteToPathQuery,
+  convertPathQueryToRoute,
   sanitizeRoute,
   deepCopyValues,
   getUpdatedPageContentFromSchemaChange,
   getPageContent,
   getProjectRoute,
-  createRoutePageContentPair,
   createRouteTree,
   isValidLocale,
   convertDBContentObjsToContent,
@@ -19,17 +18,6 @@ import {
   setContentSchema
 } from './content'
 
-test('convertPathArrayToRoute()', assert => {
-  const pathArray = ['products', 'pro', 'overview']
-  const actual = convertPathArrayToRoute(pathArray)
-  const expected = '/products/pro/overview'
-
-  assert.equal(actual, expected,
-    `Given a path array, convertPathArrayToRoute() should output a route string`)
-
-  assert.end()
-})
-
 test('convertRouteToPathArray()', assert => {
   const route = '/products/pro/overview'
   const actual = convertRouteToPathArray(route)
@@ -37,6 +25,50 @@ test('convertRouteToPathArray()', assert => {
 
   assert.deepEqual(actual, expected,
     `Given a route string, convertRouteToPathArray() should output a path array`)
+
+  assert.end()
+})
+
+test('convertRouteToPathQuery()', assert => {
+  const route = '/some/route/here'
+  const actual = convertRouteToPathQuery(route)
+  const expected = ',some,route,here'
+
+  assert.equal(actual, expected,
+    `Given a route string, convertRouteToPathQuery() should return a path
+    query string`)
+
+  /* ----- */
+
+  const route2 = '/'
+  const actual2 = convertRouteToPathQuery(route2)
+  const expected2 = ','
+
+  assert.equal(actual2, expected2,
+    `Given a root route string, convertRouteToPathQuery() should return a
+    root path query string`)
+
+  assert.end()
+})
+
+test('convertPathQueryToRoute()', assert => {
+  const route = ',some,route,here'
+  const actual = convertPathQueryToRoute(route)
+  const expected = '/some/route/here'
+
+  assert.equal(actual, expected,
+    `Given a path query string, convertPathQueryToRoute() should return a
+    route string`)
+
+  /* ----- */
+
+  const route2 = ','
+  const actual2 = convertPathQueryToRoute(route2)
+  const expected2 = '/'
+
+  assert.equal(actual2, expected2,
+    `Given a root path query string, convertPathQueryToRoute() should return
+    a root route string`)
 
   assert.end()
 })

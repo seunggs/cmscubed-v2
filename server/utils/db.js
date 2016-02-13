@@ -2,8 +2,9 @@ import R from 'ramda'
 import rdb from '../config/rdbdash'
 
 // getRouteContentFromDB :: String -> Promise of {*}
-export const getRouteContentFromDB = R.curry(route => {
+export const getRouteContentFromDB = R.curry((project, route) => {
   return rdb.table('contents')
+    .getAll(project, {index: 'project'})
     .filter(contentEntry => {
       return contentEntry('route').match('^'+route)
     })
@@ -11,8 +12,9 @@ export const getRouteContentFromDB = R.curry(route => {
 })
 
 // getPageContentFromDB :: String -> Promise of {*}
-export const getPageContentFromDB = R.curry(route => {
+export const getPageContentFromDB = R.curry((project, route) => {
   return rdb.table('contents')
+    .getAll(project, {index: 'project'})
     .getAll(route, {index: 'route'})
     .run()
 })

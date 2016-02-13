@@ -3,7 +3,7 @@ import socket from '../../modules/websockets/'
 import MediumEditor from 'react-medium-editor'
 import 'medium-editor/dist/css/medium-editor.css'
 import 'medium-editor/dist/css/themes/default.css'
-import {createOnBlur$, createContentFieldFromEditor$} from '../../modules/observables/ui'
+import {onBlur$$, sendContentFieldFromEditor$$} from '../../modules/observables/ui'
 
 const Editor = React.createClass({
   componentDidMount() {
@@ -21,10 +21,10 @@ const Editor = React.createClass({
     const [projectRoute, field] = id.split('-')
 
     // handle blur event - set attr when empty so styling can be applied
-    createOnBlur$(thisElem).subscribe(e => { setEditorEmptyAttr() })
+    onBlur$$(thisElem).subscribe(e => { setEditorEmptyAttr() })
 
     // handle content field update websocket event to server
-    createContentFieldFromEditor$(thisElem).subscribe(fieldContent => {
+    sendContentFieldFromEditor$$(thisElem).subscribe(fieldContent => {
       const pageContentField = [projectRoute, field, fieldContent]
       console.log('pageContentField: ', pageContentField)
       socket.emit('pageContentField:update', pageContentField)

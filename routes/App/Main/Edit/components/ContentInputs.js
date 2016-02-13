@@ -9,16 +9,15 @@ const ContentInputs = React.createClass({
     console.log('projectRoute: ', projectRoute)
     console.log('pageContent: ', pageContent)
     const fields = R.keys(pageContent)
-    const renderPageFields = fields.map((field, index) => {
-      const labelText = convertCamelCaseToTitleCase(field)
-      const fieldId = projectRoute + '-' + field
-      return <Editor id={fieldId} key={index} labelText={labelText} text={pageContent[field]} />
-    })
 
     return (
       <div className="col col-3">
         <div className="p2">
-          {renderPageFields}
+          {fields.map((field, index) => {
+            const labelText = convertCamelCaseToTitleCase(field)
+            const fieldId = projectRoute + '-' + field
+            return <Editor id={fieldId} key={index} labelText={labelText} text={pageContent[field]} />
+          })}
         </div>
       </div>
     )

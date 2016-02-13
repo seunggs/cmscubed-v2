@@ -1,7 +1,8 @@
 import React from 'react'
+import {browserHistory} from 'react-router'
 import R from 'ramda'
 import {getIdToken} from '../../../modules/auth/'
-import {createAddUserProfile$, createSetupComplete$} from '../../../modules/observables/auth'
+import {addUserProfile$$, getUserProject$$} from '../../../modules/observables/auth'
 import PageLoading from '../../shared/PageLoading'
 
 /*
@@ -10,37 +11,34 @@ import PageLoading from '../../shared/PageLoading'
   3) See if setup is already complete (i.e. already specified project and domain); if not, send to setup
 */
 
-const LoggedIn = React.createClass({
-  contextTypes: {
-    router: React.PropTypes.object.isRequired
-  },
-  render() {
-    console.log('LoggedIn rendered')
-    const {lock} = this.props
-    const {router} = this.context
-    console.log('router: ', this.context)
-    const idToken = getIdToken(lock)
-    if (R.isNil(idToken)) { router.replace('/') }
+const LoggedIn = ({lock}) => {
+  console.log('LoggedIn rendered')
+  const idToken = getIdToken(lock)
+  if (R.isNil(idToken)) { browserHistory.replace('/') }
 
-    createAddUserProfile$(lock, idToken).subscribe(userObj => {
-      createSetupComplete$(userObj.email).subscribe(setupComplete => {
-        console.log('setup complete', setupComplete)
-        if (setupComplete) {
-          router.push('/edit')
-        } else {
-          router.push('/setup')
-        }
-      })
+  addUserProfile$$(lock, idToken)
+    .flatMap(userObj => {
+      // first save user email in local storage
+      localStorage.setItem('userEmail', userObj.email)
+
+      // then check if the user has completed the one-time setup
+      return getUserProject$$(userObj.email)
+    })
+    .subscribe(projects => {
+      if (!R.isNil(projects)) {
+        browserHistory.replace('/dashboard')
+      } else {
+        browserHistory.replace('/setup')
+      }
     }, err => {
-      console.log('Something went wrong while running addUserProfile$: ', err)
+      console.log('Something went wrong while running addUserProfile$ and checkSetupIsComplete$: ', err)
     })
 
-    return (
-      <div>
-        <PageLoading />
-      </div>
-    )
-  }
-})
+  return (
+    <div>
+      <PageLoading />
+    </div>
+  )
+}
 
 export default LoggedIn

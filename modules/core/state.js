@@ -1,11 +1,19 @@
 import R from 'ramda'
 
-// createStateIds :: String -> [String]
-export const createStateIds = R.curry((numOfFormElems, pathname) => {
+/*
+  STATE STRUCTURE = {
+    global: {},
+    ['/route-elemName-id']: {key: value},
+    ...
+  }
+*/
+
+// createUniqueStateIds :: Integer -> String -> [String]
+export const createUniqueStateIds = R.curry((numOfElems, pathname) => {
   const startsWithSlash = R.compose(R.equals('/'), R.head)
   const isValidPathName = startsWithSlash(pathname)
   if (!isValidPathName) { throw Error('Please input a valid pathname for createStateId()') }
-  return R.range(0, numOfFormElems).map(num => 'state-' + pathname + '-' + num)
+  return R.range(0, numOfElems).map(num => 'state-' + pathname + '-' + num)
 })
 
 // getElemState :: String -> {*} -> {*}

@@ -9,7 +9,6 @@ import routes from './server/routes'
 import socketIo from 'socket.io'
 import websockets from './server/websockets/'
 import {getRouteContentFromDB, getPageContentFromDB} from './server/utils/db'
-import {convertDBContentObjsToContent} from './modules/core/content'
 
 const app = express()
 const server = Server(app)
@@ -18,11 +17,8 @@ export const io = socketIo(server) // make io available to other modules
 // establish socket.io connection and send initial content
 io.on('connection', socket => {
   console.log('User connected')
-  getRouteContentFromDB('/')
-    .then(dbContentObjs => {
-      const content = convertDBContentObjsToContent(dbContentObjs)
-      socket.emit('routeContent:fromDB', content)
-    })
+  socket.emit('connected')
+  socket.emit('routeContent:fromDB', {'/': {}})
 })
 
 // set up express

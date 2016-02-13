@@ -2,6 +2,30 @@ import Rx from 'rx-lite'
 import R from 'ramda'
 import {io} from '../../server'
 import rdb from '../config/rdbdash'
+import {getRouteContentFromDB} from '../utils/db'
+import {convertDBContentObjsToContent} from '../../modules/core/content'
+
+export const initRouteContent$ = Rx.Observable.create(observer => {
+  let cancelled = false
+  if (!cancelled) {
+    io.on('connection', socket => {
+      socket.on('routeContent:get', ({project, route}) => {
+        console.log('routeContent:get received!', project, route)
+        getRouteContentFromDB(project, route)
+          .then(dbContentObjs => {
+            const rootContent = convertDBContentObjsToContent(dbContentObjs)
+            console.log('rootContent: ', rootContent)
+            socket.emit('routeContent:fromDB', rootContent)
+            observer.onNext(rootContent)
+          })
+      })
+    })
+  }
+  return () => {
+    cancelled = true
+    console.log('Disposed')
+  }
+})
 
 export const contentUpdate$ = Rx.Observable.create(observer => {
   let cancelled = false

@@ -13,7 +13,7 @@ const RouteTransition = ({children, pathname}) => {
   }
   const getStyles = childrenArray => {
     return childrenArray.map(child => {
-      return {key: child.key, style: {opacity: spring(1, {stiffness: 110, damping: 15})}}
+      return {key: child.key, style: {opacity: spring(1, {stiffness: 100, damping: 15})}}
     })
   }
 

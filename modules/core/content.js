@@ -1,13 +1,15 @@
 import R from 'ramda'
 import socket from '../websockets/'
 import locales from './data/locales'
+import {getProjectFromLocalStorage, getEnvFromLocalStorage} from './project'
 
 /* NAMING CONVENTIONS
   route (i.e. '/products/hacker')
   path (i.e. '/' or 'hacker'): individual route node
   pathArray (i.e. ['products', 'hacker']): array of paths
   schemaObj: initial content objects whose keys only matter (not values)
-  routePageContentPair: [route, pageContent] pair of route and pageContent obj for transfer between client, server, and DB
+  typesObj: type of each content field (i.e. matrix, slider, onOff, etc)
+  contentUpdateObj: [project, locale, route, pageContent] for transfer between client, server, and DB
   oldNewContentPair: [oldContent, [route, newContent]]
   dbBackupObj: an object of mostly meta data inside DB for a changed route (for backup/undo purposes)
   dbContentObj: entry obj in contents table (i.e. {project: 'Project', locale: 'en-US', route: '/', content: {heading: "Home"}})
@@ -16,11 +18,11 @@ import locales from './data/locales'
 /* DATA FLOW
   NOTE: pageContent is the unit mostly worked with
   1) Developer flow:
-    Client (pageContentSchema -> [oldVal, newVal (routePageContentPair)])
+    Client (pageContentSchema -> [oldVal, newVal (contentUpdateObj)])
     -> Server (pass through to DB)
     -> DB (update route + add dbBackupObj)
   2) End user flow:
-    Client (pageContent -> [oldVal, newVal (routePageContentPair)])
+    Client (pageContent -> [oldVal, newVal (contentUpdateObj)])
     -> Server (pass through to DB)
     -> DB (update route + add dbBackupObj)
   3) DB to client flow:
@@ -29,16 +31,30 @@ import locales from './data/locales'
     -> Client (routeContent/pageContent)
 */
 
+/* DOCUMENTATION
+  FOR USER:
+  1) Set schemaObj (optionally, set typesObj) - waits for projectName & env in localStorage
+  2) Run getPageContent, getRouteContent, or getRootContent
+
+  FOR ME:
+  1) Wipe out projectName and env from localStorage
+  2) Get projectName & env from DB and save it to localStorage (send out 'env:set' event) - if not found, do nothing from here on
+  3) If env is PREVIEW, load the heavy script (with Ramda, Rx-lite, and Socket.io-client); if not, the light script
+  4) setPageContentSchema saves immediately to localStorage - when env is ready & scripts are loaded, send it to server/DB
+  5a) if PREVIEW, rootContent arrives asynchronously and routes are updated automatically
+  5b) if NOT PREVIEW, getPageContent waits for async prop or state
+*/
+
 const log = x => { console.log(x); return x }
-
-// convertQueryToPathArray :: String -> [String]
-export const convertQueryToPathArray = R.compose(R.map(R.trim), R.split(','), R.replace(']', ''), R.replace('[', ''))
-
-// convertPathArrayToRoute :: [String] -> String
-export const convertPathArrayToRoute = R.compose(R.reduce(R.add, ''), R.map(R.add('/')))
 
 // convertRouteToPathArray :: String -> [String]
 export const convertRouteToPathArray = R.compose(R.reject(R.isEmpty), R.split('/'))
+
+// convertRouteToPathQuery :: String -> String
+export const convertRouteToPathQuery = R.compose(R.join(','), R.split('/'))
+
+// convertPathQueryToRoute :: String -> String
+export const convertPathQueryToRoute = R.compose(R.join('/'), R.split(','))
 
 // sanitizeRoute :: String -> String
 export const sanitizeRoute = R.curry(route => {
@@ -72,7 +88,7 @@ export const deepCopyValues = R.curry((fromObj, toObj) => {
   return deepCopy
 })
 
-// getUpdatedPageContentFromSchemaChange ::
+// getUpdatedPageContentFromSchemaChange :: {*} -> {*} -> {*}
 export const getUpdatedPageContentFromSchemaChange = R.curry((currentPageContent, newSchemaObj) => {
   return R.isNil(currentPageContent) ? newSchemaObj : deepCopyValues(currentPageContent, newSchemaObj)
 })
@@ -89,13 +105,13 @@ export const getPageContent = R.curry((route, rootContent) => {
   return pageContent
 })
 
-// createRoutePageContentPair :: String -> {*} -> [*]
-export const createRoutePageContentPair = R.curry((route, pageContent) => {
+// createContentUpdateObj :: String -> String -> String -> {*} -> [*]
+export const createContentUpdateObj = R.curry((project, locale, route, pageContent) => {
   const sanitizedRoute = sanitizeRoute(route)
-  return [sanitizedRoute, pageContent]
+  return [project, locale, sanitizedRoute, pageContent]
 })
 
-// createRouteTree :: String -> {*} -> [*]
+// createRouteTree :: {*} -> [*]
 export const createRouteTree = R.curry(rootContent => {
   const createNestedRoutes = R.curry(rootContent => {
     const routes = R.compose(R.map(sanitizeRoute), R.keys)(rootContent)
@@ -105,7 +121,6 @@ export const createRouteTree = R.curry(rootContent => {
   const nestedRootContent = createNestedRoutes(rootContent)
 
   const getChildRoutes = R.curry(obj => {
-    // Get all keys of objects that are routeObjs (i.e. who has {$type: 'route'})
     const childRoutes = R.keys(obj)
     return childRoutes.map(key => ({path: key, childRoutes: getChildRoutes(obj[key])}))
   })
@@ -136,8 +151,8 @@ export const isContent = R.curry(input => {
 /* --- IMPURE --------------------------------------------------------------- */
 
 // TODO: add test
-export const sendPageContent = R.curry((oldPageContent, routePageContentPair) => {
-  socket.emit('pageContent:update', {oldVal: oldPageContent, newVal: routePageContentPair})
+export const sendPageContent = R.curry((oldPageContent, contentUpdateObj) => {
+  socket.emit('pageContent:update', {oldVal: oldPageContent, newVal: contentUpdateObj})
   return 'sent'
 })
 
@@ -145,29 +160,13 @@ export const sendPageContent = R.curry((oldPageContent, routePageContentPair) =>
 export const setContentSchema = R.curry((route, rootContent, schemaObj) => {
   const pageContent = getPageContent(route, rootContent)
   const updatedPageContent = getUpdatedPageContentFromSchemaChange(pageContent, schemaObj)
-  const routePageContentPair = createRoutePageContentPair(route, updatedPageContent)
   // Only send if content has changed
-  if (JSON.stringify(pageContent) !== JSON.stringify(updatedPageContent)) {
-    sendPageContent(pageContent, routePageContentPair)
+  if (!R.equals(pageContent, updatedPageContent)) {
+    const project = getProjectFromLocalStorage()
+    const env = getEnvFromLocalStorage()
+    const contentUpdateObj = createContentUpdateObj(project, env, route, updatedPageContent)
+    sendPageContent(pageContent, contentUpdateObj)
     return 'sent'
   }
   return 'not sent'
 })
-
-
-// TODO: remove it later
-const testEntry2 = {
-  heading: 'Pro heading',
-  text: 'Pro text',
-  subContent: {
-    text: 'Pro sub content'
-  },
-  list: [
-    'Pro list item 1',
-    {innerText: 'Pro list item 2'}
-  ],
-  matrix: [ // put matrix option in the UI?
-    ['Pro 11', 'Pro 12'],
-    ['Pro 21', 'Pro 22']
-  ]
-}

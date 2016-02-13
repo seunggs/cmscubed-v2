@@ -1,17 +1,21 @@
 import React from 'react'
 import R from 'ramda'
 import {sendStateChangeEvent} from '../../modules/events/state'
-import {createOnClick$} from '../../modules/observables/ui'
+import {getElemState} from '../../modules/core/state'
 import C3Error from './C3Error'
 
 const C3Select = React.createClass({
+  getState() {
+    const {id, rootState} = this.props
+    return getElemState(id, rootState)
+  },
   shouldComponentUpdate(nextProps) {
-    return !R.equals(nextProps.elemState, this.props.elemState)
+    return !R.equals(nextProps.rootState, this.props.rootState)
   },
   componentDidMount() {
     const {id} = this.props
     // handle focus state on document
-    createOnClick$(document).subscribe(e => {
+    Rx.Observable.fromEvent(document, 'click').subscribe(e => {
       if (this._selectElem !== e.target) {
         if (this._selectElem.getAttribute('data-c3-select-focused') === 'true') {
           const isFocused = false
@@ -21,8 +25,8 @@ const C3Select = React.createClass({
     })
   },
   handleClick(e) {
-    const {id, elemState, validators} = this.props
-    let {isFocused} = elemState
+    const {id, rootState, validators} = this.props
+    let {isFocused} = this.getState()
     const selectValueContainerElem = e.target.querySelector('.c3-option-selected')
     const selectValue = R.isNil(selectValueContainerElem) ? e.target.innerText : selectValueContainerElem.innerText
 
@@ -48,8 +52,8 @@ const C3Select = React.createClass({
   },
   render() {
     console.log('C3Select rendered')
-    const {children, id, name, elemState, placeholder, selected} = this.props
-    const {isEmpty = R.isNil(selected), isFocused = 'false', selectValue = selected, isTouched = 'false', isValid = 'null', errorMsgs = []} = elemState
+    const {children, id, name, rootState, placeholder, selected} = this.props
+    const {isEmpty = R.isNil(selected), isFocused = 'false', selectValue = selected, isTouched = 'false', isValid = 'null', errorMsgs = []} = this.getState()
     return (
       <div>
         <div className="input-group">
@@ -91,7 +95,7 @@ const C3Select = React.createClass({
 C3Select.propTypes = {
   id: React.PropTypes.string.isRequired,
   name: React.PropTypes.string.isRequired,
-  elemState: React.PropTypes.object.isRequired,
+  rootState: React.PropTypes.object.isRequired,
   placeholder: React.PropTypes.string.isRequired,
   validators: React.PropTypes.array,
   selected: React.PropTypes.string

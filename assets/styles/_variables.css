@@ -60,10 +60,13 @@
   --white:  #fff;
   --silver: #ddd;
   --gray:   #aaa;
+  --dark-gray: #333;
   --black:  #111;
 
   /* Custom */
   --purplish: #5264AE;
+  --before-midnight: #252e37;
+  --midnight: #1c2228;
 
   --darken-1: rgba(0,0,0,.0625);
   --darken-2: rgba(0,0,0,.125);

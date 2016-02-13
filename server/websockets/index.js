@@ -1,5 +1,6 @@
 import {io} from '../../server'
 import {
+  initRouteContent$,
   contentUpdate$,
   pageFieldUpdate$,
   contentChangesFromDB$,
@@ -16,10 +17,13 @@ import {
 } from '../../modules/core/content'
 
 export default () => {
+  initRouteContent$.subscribe(rootContent => {
+    io.emit('routeContent:fromDB', rootContent)
+  })
+
   contentUpdate$.subscribe(oldNewContentPair => {
-    const project = 'cmscubed-test'
-    const userEmail = 'blah@gmail.com'
-    const locale = 'en-US'
+    const project = oldNewContentPair.project
+    const locale = oldNewContentPair.locale // if 'all', update all locales
     const oldPageContent = oldNewContentPair.oldVal
     const route = R.head(oldNewContentPair.newVal)
     const newPageContent = R.last(oldNewContentPair.newVal)
@@ -30,10 +34,8 @@ export default () => {
     const dbBackupObj = {
       project: project,
       locale: locale,
-      backupType: "auto", // "manual" or "auto"
       changeType: "schema", // "schema" or "content"
       changeTime: new Date().getTime(),
-      userEmail: userEmail,
       updatedRoute: route,
       prevContent: oldPageContent
     }

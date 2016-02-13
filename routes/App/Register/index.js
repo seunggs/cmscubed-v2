@@ -1,9 +1,10 @@
 import React from 'react'
+import {browserHistory} from 'react-router'
 import {loggedIn} from '../../../modules/auth/'
 
 const Register = ({lock}) => {
   if (loggedIn()) {
-    history.replace('/main')
+    browserHistory.replace('/loggedin')
   } else {
     const lockOptions = {
       callbackURL: 'http://localhost:3333/loggedin',

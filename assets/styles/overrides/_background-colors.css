@@ -1,1 +1,4 @@
 .bg-purplish  { background-color: var(--purplish) }
+.bg-dark-gray { background-color: var(--dark-gray) }
+.bg-before-midnight { background-color: var(--before-midnight) }
+.bg-midnight { background-color: var(--midnight) }

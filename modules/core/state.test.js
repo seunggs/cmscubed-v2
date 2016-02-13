@@ -9,9 +9,9 @@ test('createStateIds()', assert => {
   const pathname = '/some/path'
   const actual = createStateIds(numOfFormElems, pathname)
   const expected = [
+    'state-/some/path-0',
     'state-/some/path-1',
-    'state-/some/path-2',
-    'state-/some/path-3'
+    'state-/some/path-2'
   ]
 
   assert.deepEqual(actual, expected,

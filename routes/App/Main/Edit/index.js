@@ -1,11 +1,11 @@
 import React from 'react'
 import ContentInputs from './components/ContentInputs'
 import Preview from './components/Preview'
-import RouteTree from './components/RouteTree'
 import {getProjectRoute, getPageContent} from '../../../../modules/core/content'
 
 const Edit = ({location, rootContent}) => {
   console.log('Edit rendered')
+  console.log('rootContent: ', rootContent)
   const projectRoute = getProjectRoute(location.pathname)
   const pageContent = getPageContent(projectRoute, rootContent)
   const projectUrl = 'http://www.terapeak.com'
