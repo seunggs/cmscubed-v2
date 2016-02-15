@@ -1,7 +1,7 @@
 import React from 'react'
 import R from 'ramda'
 import RouteTree from '../../../shared/RouteTree'
-import {createUniqueStateIds, getElemState} from '../../../../modules/core/state'
+import {createStateIds, getElemState} from '../../../../modules/core/state'
 import {sendStateChangeEvent} from '../../../../modules/events/state'
 import {initRouteContent$$} from '../../../../modules/observables/content'
 import {getUserProject$$} from '../../../../modules/observables/auth'
@@ -11,7 +11,7 @@ import TopMenu from '../../../shared/TopMenu'
 const Dashboard = React.createClass({
   getId() {
     const {location} = this.props
-    return R.head(createUniqueStateIds(1, location.pathname))
+    return R.head(createStateIds(1, location.pathname))
   },
   getState() {
     const {rootState} = this.props
@@ -47,7 +47,7 @@ const Dashboard = React.createClass({
 
     return (
       <div>
-        <TopMenu location={location} rootState={rootState} />
+        <TopMenu rootState={rootState} />
         <RouteTree rootContent={rootContent} />
         {(() => {if (elemState.pageLoading) { return <PageLoading /> }})()}
       </div>

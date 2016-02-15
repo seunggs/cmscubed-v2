@@ -1,5 +1,5 @@
 import R from 'ramda'
-import domain from 'domain-regex'
+import parseDomain from 'parse-domain'
 import {convertToCamelCase} from '../utils/'
 import config from '../../client-config'
 
@@ -16,26 +16,27 @@ export const checkIsCamelCased = text => {
   return trimmedText === camelCasedText ? true : false
 }
 
+// TODO: add test
 // checkIsDomain :: String -> Boolean
 export const checkIsDomain = str => {
   if (R.isEmpty(str) || R.isNil(str)) { return false }
   const trimmedStr = R.trim(str)
-  return domain().test(trimmedStr)
+  return !R.isNil(parseDomain(trimmedStr))
 }
 
 // TODO: add test
-export const createProjectNameIsAvailable$ = projectName => {
+export const projectDomainIsAvailable$$ = domain => {
   return Rx.Observable.create(observer => {
     let cancelled = false
 
     if (!cancelled) {
-      fetch(config.apiBase + '/api/projects/' + projectName)
+      fetch(config.apiBase + '/api/projects?searchBySecondaryIndex=domain,' + encodeURIComponent(domain))
         .then(res => {
           return res.json()
         })
-        .then(projectObj => {
-          console.log('projectObj: ', projectObj)
-          const projectNameIsAvailable = R.isEmpty(projectObj) ? true : false
+        .then(projectDetails => {
+          console.log('projectDetails: ', projectDetails)
+          const projectNameIsAvailable = R.isEmpty(projectDetails) ? true : false
           observer.onNext(projectNameIsAvailable)
           observer.onCompleted()
         })

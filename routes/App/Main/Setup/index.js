@@ -1,11 +1,12 @@
 import React from 'react'
+import R from 'ramda'
 import {browserHistory} from 'react-router'
 import C3Input from '../../../shared/C3Input'
 import C3Select from '../../../shared/C3Select'
 import C3Option from '../../../shared/C3Option'
 import C3SubmitButton from '../../../shared/C3SubmitButton'
 import C3HiddenInput from '../../../shared/C3HiddenInput'
-import {checkIsNotEmpty, checkIsCamelCased, checkIsDomain, createProjectNameIsAvailable$} from '../../../../modules/validators/'
+import {checkIsNotEmpty, checkIsCamelCased, checkIsDomain, projectDomainIsAvailable$$} from '../../../../modules/validators/'
 import {createStateIds} from '../../../../modules/core/state'
 import {addNewProjectAndAddProjectToUser$$} from '../../../../modules/observables/ui'
 import {getUserProject$$} from '../../../../modules/observables/auth'
@@ -30,7 +31,7 @@ const Setup = React.createClass({
     const isRequiredValidator = {attrName: 'is-required', predicateFunc: checkIsNotEmpty, errorMsg: 'This field is required'}
     const isCamelCasedValidator = {attrName: 'is-camelcased', predicateFunc: checkIsCamelCased, errorMsg: 'Project name must be camel cased'}
     const isDomainValidator = {attrName: 'is-domain', predicateFunc: checkIsDomain, errorMsg: 'Invalid domain'}
-    const isAvailableValidator = {attrName: 'is-available', predicateFunc: createProjectNameIsAvailable$, errorMsg: 'This project name is unavailable'}
+    const isAvailableValidator = {attrName: 'is-available', predicateFunc: projectDomainIsAvailable$$, errorMsg: 'This project name is unavailable'}
 
     return (
       <div id="setup" className="clearfix mxn2">
@@ -39,9 +40,9 @@ const Setup = React.createClass({
             <h2 className="mb3">Project Setup</h2>
             <form noValidate>
               <C3HiddenInput name="email" value={userEmail} />
-              <C3Input id={ids[0]} name="project" rootState={rootState} labelText="Project Name" validators={[isRequiredValidator, isCamelCasedValidator]} asyncValidator={isAvailableValidator} autoFocus="true" />
-              <C3Input id={ids[1]} name="domain" rootState={rootState} labelText="Project Domain" validators={[isRequiredValidator, isDomainValidator]} />
-              <C3Input id={ids[2]} name="stagingDomain" rootState={rootState} labelText="Project Staging Domain" validators={[isRequiredValidator, isDomainValidator]} />
+              <C3Input id={ids[0]} name="project" rootState={rootState} labelText="Project Name" validators={[isRequiredValidator, isCamelCasedValidator]} autoFocus="true" />
+              <C3Input id={ids[1]} name="prodDomain" rootState={rootState} labelText="Project Production Domain" validators={[isRequiredValidator, isDomainValidator]} asyncValidator={isAvailableValidator} />
+              <C3Input id={ids[2]} name="stagingDomain" rootState={rootState} labelText="Project Staging Domain" validators={[isRequiredValidator, isDomainValidator]} asyncValidator={isAvailableValidator} />
               <C3Select id={ids[3]} name="locale" rootState={rootState} placeholder="Default Locale" validators={[isRequiredValidator]} selected={'en-US'}>
                 <C3Option value="en-US"></C3Option>
               </C3Select>

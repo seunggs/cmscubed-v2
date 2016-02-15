@@ -1,6 +1,9 @@
 import Rx from 'rx-lite'
 import R from 'ramda'
+import parseDomain from 'parse-domain'
 import config from '../../client-config'
+import {createPreviewDomain} from '../core/content'
+import {sanitizeDomain} from '../client/core'
 
 export const onBlur$$ = thisElem => {
   return Rx.Observable.fromEvent(thisElem, 'blur')
@@ -15,22 +18,28 @@ export const sendContentFieldFromEditor$$ = thisElem => {
 export const addNewProject$$ = formValues => {
   return Rx.Observable.create(observer => {
     let cancelled = false
+    const {prodDomain, stagingDomain} = formValues
+    const sanitizedProdDomain = sanitizeDomain(prodDomain)
+    const tld = R.prop('tld', parseDomain(sanitizedProdDomain))
+    const sanitizedStagingDomain = sanitizeDomain(stagingDomain)
 
     if (!cancelled) {
       console.log('Inside createNewProject$')
       const dbProjectObj = {
         project: formValues.project,
-        domain: formValues.domain,
-        stagingDomain: formValues.stagingDomain,
+        prodDomain: sanitizedProdDomain,
+        stagingDomain: sanitizedStagingDomain,
+        previewProdDomain: createPreviewDomain(sanitizedProdDomain, 'prod', tld),
+        previewStagingDomain: createPreviewDomain(sanitizedProdDomain, 'staging', tld),
         users: [formValues.email],
         defaultLocale: formValues.locale,
         locales: [formValues.locale],
         domainMap: {
-          [formValues.locale]: formValues.domain
+          [tld]: formValues.locale
         }
       }
 
-      fetch(config.apiBase + '/api/projects', {
+      fetch(config.apiBase + '/api/projects?env=' + env, {
         method: 'post',
         headers: {
           'Accept': 'application/json',
@@ -60,7 +69,7 @@ export const addProjectToUser$$ = (formValues) => {
     if (!cancelled) {
       console.log('Inside createAddProjectToUser$')
       const encodedEmail = encodeURIComponent(formValues.email)
-      const userUpdateObj = {project: formValues.project}
+      const userUpdateObj = {projectDomain: formValues.prodDomain}
 
       fetch(config.apiBase + '/api/users/' + encodedEmail, {
         method: 'put',

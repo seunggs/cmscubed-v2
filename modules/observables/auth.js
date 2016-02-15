@@ -40,11 +40,11 @@ export const getUserProject$$ = userEmail => {
           observer.onNext(null)
           observer.onCompleted()
         } else {
-          if (!R.prop('project', R.head(userObj))) {
+          if (!R.prop('projectDomain', R.head(userObj))) {
             observer.onNext(null)
             observer.onCompleted()
           } else {
-            observer.onNext(R.head(userObj).project)
+            observer.onNext(R.head(userObj).projectDomain)
             observer.onCompleted()
           }
         }

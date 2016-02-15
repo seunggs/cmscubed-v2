@@ -9,22 +9,29 @@ test('createStateIds()', assert => {
   const pathname = '/some/path'
   const actual = createStateIds(numOfFormElems, pathname)
   const expected = [
-    'state-/some/path-0',
-    'state-/some/path-1',
-    'state-/some/path-2'
+    '/some/path-0',
+    '/some/path-1',
+    '/some/path-2'
   ]
 
   assert.deepEqual(actual, expected,
     `Given a number of length and pathname, createStateIds() should create
-    an array of ids in the form of "state-route-num"`)
+    an array of ids in the form of "route-num"`)
 
   /* -------------------- */
 
   const numOfFormElems2 = 3
-  const pathname2 = 'some/path'
+  const elemName2 = 'someElem'
+  const actual2 = createStateIds(numOfFormElems2, elemName2)
+  const expected2 = [
+    'someElem-0',
+    'someElem-1',
+    'someElem-2'
+  ]
 
-  assert.throws(() => createStateIds(numOfFormElems2, pathname2), Error,
-    `Given an invalid pathname, createStateIds() should throw an error`)
+  assert.deepEqual(actual2, expected2,
+    `Given a number of length and elemName, createStateIds() should create
+    an array of ids in the form of "elemName-num"`)
 
   assert.end()
 })

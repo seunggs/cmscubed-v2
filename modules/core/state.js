@@ -8,12 +8,9 @@ import R from 'ramda'
   }
 */
 
-// createUniqueStateIds :: Integer -> String -> [String]
-export const createUniqueStateIds = R.curry((numOfElems, pathname) => {
-  const startsWithSlash = R.compose(R.equals('/'), R.head)
-  const isValidPathName = startsWithSlash(pathname)
-  if (!isValidPathName) { throw Error('Please input a valid pathname for createStateId()') }
-  return R.range(0, numOfElems).map(num => 'state-' + pathname + '-' + num)
+// createStateIds :: Integer -> String -> [String]
+export const createStateIds = R.curry((numOfElems, stateName) => {
+  return R.range(0, numOfElems).map(num => stateName + '-' + num)
 })
 
 // getElemState :: String -> {*} -> {*}

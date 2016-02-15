@@ -21,7 +21,7 @@ const OnOff = React.createClass({
     sendStateChangeEvent(id, {isOn: isOn ? false : true})
   },
   render() {
-    const {buttonColor = '#fff', onColor = '#ac3520', offColor = 'rgba(255,255,255,0.25)', onText = 'On', offText = 'Off', width = 32, height = 16} = this.props
+    const {buttonColor = '#fff', onColor = '#ac3520', offColor = '#0e9e2a', onText = 'On', offText = 'Off', width = 32, height = 16} = this.props
     const {isOn} = this.getState()
     const bgColor = isOn ? onColor : offColor
     const offTextColor = isOn ? {color: 'rgba(255,255,255,0.5)'} : {color: 'rgba(255,255,255,0.9)'}

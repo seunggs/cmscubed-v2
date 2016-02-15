@@ -2,20 +2,12 @@ import test from 'tape'
 import sinon from 'sinon'
 import {
   convertRouteToPathArray,
-  convertRouteToPathQuery,
-  convertPathQueryToRoute,
-  sanitizeRoute,
-  deepCopyValues,
-  getUpdatedPageContentFromSchemaChange,
+  createPreviewDomain,
   getPageContent,
   getProjectRoute,
   createRouteTree,
   isValidLocale,
-  convertDBContentObjsToContent,
-  isContent,
-  // IMPURE
-  sendPageContent,
-  setContentSchema
+  convertDBContentObjsToContent
 } from './content'
 
 test('convertRouteToPathArray()', assert => {
@@ -29,194 +21,16 @@ test('convertRouteToPathArray()', assert => {
   assert.end()
 })
 
-test('convertRouteToPathQuery()', assert => {
-  const route = '/some/route/here'
-  const actual = convertRouteToPathQuery(route)
-  const expected = ',some,route,here'
+test('createPreviewDomain()', assert => {
+  const domain = 'https://www.blah.com'
+  const env = 'staging'
+  const tld = 'com'
+  const actual = createPreviewDomain(domain, env, tld)
+  const expected = 'c3-www-blah-preview-staging-com.surge.sh'
 
   assert.equal(actual, expected,
-    `Given a route string, convertRouteToPathQuery() should return a path
-    query string`)
-
-  /* ----- */
-
-  const route2 = '/'
-  const actual2 = convertRouteToPathQuery(route2)
-  const expected2 = ','
-
-  assert.equal(actual2, expected2,
-    `Given a root route string, convertRouteToPathQuery() should return a
-    root path query string`)
-
-  assert.end()
-})
-
-test('convertPathQueryToRoute()', assert => {
-  const route = ',some,route,here'
-  const actual = convertPathQueryToRoute(route)
-  const expected = '/some/route/here'
-
-  assert.equal(actual, expected,
-    `Given a path query string, convertPathQueryToRoute() should return a
-    route string`)
-
-  /* ----- */
-
-  const route2 = ','
-  const actual2 = convertPathQueryToRoute(route2)
-  const expected2 = '/'
-
-  assert.equal(actual2, expected2,
-    `Given a root path query string, convertPathQueryToRoute() should return
-    a root route string`)
-
-  assert.end()
-})
-
-test('sanitizeRoute()', assert => {
-  const route = '/products/'
-  const actual = sanitizeRoute(route)
-  const expected = '/products'
-
-  assert.equal(actual, expected,
-    `Given a route string with a trailing slash, sanitizeRoute() should remove
-    the trailing slash`)
-
-  const route2 = '/products'
-  const actual2 = sanitizeRoute(route2)
-  const expected2 = '/products'
-
-  assert.equal(actual2, expected2,
-    `Given a route string with no trailing slash, sanitizeRoute() should do
-    nothing`)
-
-  const route3 = '/'
-  const actual3 = sanitizeRoute(route3)
-  const expected3 = '/'
-
-  assert.equal(actual3, expected3,
-    `Given a root route, sanitizeRoute() should do nothing`)
-
-  assert.end()
-})
-
-test('deepCopyValues()', assert => {
-  const fromObj = {
-    heading: 'Old heading',
-    text: 'Home text',
-    list: [
-      'old list',
-      'item 2'
-    ],
-    benefits: {
-      pro: 'Pro benefits',
-      hacker: 'Hacker benefits',
-      subBenefits: {
-        benefit1: 'subBenefit 1'
-      }
-    }
-  }
-  const toObj = {
-    heading: 'Changed heading',
-    addedKey: 'Something',
-    list: [
-      'new list',
-      'item 2'
-    ],
-    benefits: {
-      pro: 'Pro benefits',
-      hacker: 'Hacker benefits',
-      anotherAddedKey: 'Something else'
-    }
-  }
-  const actual = deepCopyValues(fromObj, toObj)
-  const expected = {
-    heading: 'Old heading',
-    addedKey: 'Something',
-    list: [
-      'old list',
-      'item 2'
-    ],
-    benefits: {
-      pro: 'Pro benefits',
-      hacker: 'Hacker benefits',
-      anotherAddedKey: 'Something else'
-    }
-  }
-
-  assert.deepEqual(actual, expected,
-    `deepCopyValues() should deep copy all values from fromObj into toObj`)
-
-  assert.end()
-})
-
-test('getUpdatedPageContentFromSchemaChange()', assert => {
-  const currentPageContent = {
-    heading: 'Old heading',
-    text: 'Home text',
-    list: ['old list', 'item 2'],
-    benefits: {
-      pro: 'Pro benefits',
-      hacker: 'Hacker benefits',
-      subBenefits: {
-        benefit1: 'subBenefit 1'
-      }
-    }
-  }
-  const newSchemaObj = {
-    heading: 'Changed heading',
-    addedKey: 'Something',
-    list: ['new list', 'item 2'],
-    benefits: {
-      pro: 'Pro benefits',
-      hacker: 'Hacker benefits',
-      anotherAddedKey: 'Something else'
-    }
-  }
-  const actual = getUpdatedPageContentFromSchemaChange(currentPageContent, newSchemaObj)
-  const expected = {
-    heading: 'Old heading',
-    addedKey: 'Something',
-    list: ['old list', 'item 2'],
-    benefits: {
-      pro: 'Pro benefits',
-      hacker: 'Hacker benefits',
-      anotherAddedKey: 'Something else'
-    }
-  }
-
-  assert.deepEqual(actual, expected,
-    `Given the current pageContent and a new schema object,
-    getUpdatedPageContentFromSchemaChange() should return updated pageContent
-    (with new keys from new schema object and old values from current
-    pageContent)`)
-
-  /* -------------------- */
-
-  const currentPageContent2 = undefined
-  const newSchemaObj2 = {
-    heading: 'Changed heading',
-    list: ['new list', 'item 2'],
-    benefits: {
-      pro: 'Pro benefits',
-      hacker: 'Hacker benefits',
-      anotherAddedKey: 'Something else'
-    }
-  }
-  const actual2 = getUpdatedPageContentFromSchemaChange(currentPageContent2, newSchemaObj2)
-  const expected2 = {
-    heading: 'Changed heading',
-    list: ['new list', 'item 2'],
-    benefits: {
-      pro: 'Pro benefits',
-      hacker: 'Hacker benefits',
-      anotherAddedKey: 'Something else'
-    }
-  }
-
-  assert.deepEqual(actual2, expected2,
-    `getUpdatedPageContentFromSchemaChange() should return a pageContent that's
-    identical to new schemaObj if the page doesn't already exist`)
+    `Given a domain and env, createPreviewDomain() should return a preview
+    url consisting of prefix, subdomain, domain, and env`)
 
   assert.end()
 })
@@ -461,124 +275,6 @@ test('convertDBContentObjsToContent()', assert => {
   assert.deepEqual(actual, expected,
     `Given dbContentObj array from DB, convertDBContentObjsToContent() should
     return a content object consumable by the client`)
-
-  assert.end()
-})
-
-test('isContent()', assert => {
-  const content = {
-    "/products": {
-      heading: 'Products heading',
-      text: 'Products text'
-    },
-    "/products/pro": {
-      heading: 'Pro heading',
-      text: 'Pro text'
-    }
-  }
-  const actual = isContent(content)
-  const expected = true
-
-  assert.equal(actual, expected,
-    `Given a content object with routes as root keys, isContent() should
-    return true`)
-
-  /* -------------------- */
-
-  const content2 = {
-    "something": {
-      text: 'Some text'
-    },
-    "buttonState": {
-      heading: 'Button heading',
-      text: 'Button text'
-    }
-  }
-  const actual2 = isContent(content2)
-  const expected2 = false
-
-  assert.equal(actual2, expected2,
-    `Given a non-content object with no routes as root keys, isContent()
-    should return false`)
-
-  /* -------------------- */
-
-  const content3 = 'Some string'
-  const actual3 = isContent(content3)
-  const expected3 = false
-
-  assert.equal(actual3, expected3,
-    `Given a non-content object with no routes as root keys, isContent()
-    should return false`)
-
-  /* -------------------- */
-
-  const content4 = {}
-  const actual4 = isContent(content4)
-  const expected4 = false
-
-  assert.equal(actual4, expected4,
-    `Given an empty object, isContent() should return false`)
-
-  /* -------------------- */
-
-  const content5 = {
-    'state-/root-1': {
-      some: 'text'
-    }
-  }
-  const actual5 = isContent(content5)
-  const expected5 = false
-
-  assert.equal(actual5, expected5,
-    `Given a non-content object that includes slash, isContent() should
-    return false`)
-
-  assert.end()
-})
-
-/* --- IMPURE --------------------------------------------------------------- */
-
-test('setContentSchema()', assert => {
-  const route = '/products'
-  const rootContent = {
-    '/': {
-      heading: 'Home heading',
-    },
-    '/products': {
-      heading: 'Products heading'
-    }
-  }
-  const schemaObj = {
-    heading: 'Products heading',
-    text: 'Products text'
-  }
-  const actual = setContentSchema(route, rootContent, schemaObj)
-  const expected = 'sent'
-
-  assert.equal(actual, expected,
-    `If schemaObj has different keys from current pageContent,
-    setContentSchema() should call sendPageContent once`)
-
-  /* -------------------- */
-
-  const rootContent2 = {
-    '/': {
-      heading: 'Home heading',
-    },
-    '/products': {
-      heading: 'Products heading'
-    }
-  }
-  const schemaObj2 = {
-    heading: 'Products heading'
-  }
-  const actual2 = setContentSchema(route, rootContent2, schemaObj2)
-  const expected2 = 'not sent'
-
-  assert.equal(actual2, expected2,
-    `If schemaObj and pageContent are identical (not the same object, but
-    same attributes and values), sendPageContent() should NOT be called`)
 
   assert.end()
 })
