@@ -1,9 +1,7 @@
 import Rx from 'rx-lite'
 import R from 'ramda'
-import parseDomain from 'parse-domain'
 import config from '../../client-config'
-import {createPreviewDomain} from '../core/content'
-import {sanitizeDomain} from '../client/core'
+import {createPreviewDomain, sanitizeDomain} from '../core/content'
 
 export const onBlur$$ = thisElem => {
   return Rx.Observable.fromEvent(thisElem, 'blur')
@@ -18,28 +16,38 @@ export const sendContentFieldFromEditor$$ = thisElem => {
 export const addNewProject$$ = formValues => {
   return Rx.Observable.create(observer => {
     let cancelled = false
-    const {prodDomain, stagingDomain} = formValues
+    const {prodDomain, stagingDomain, locale, email, project} = formValues
+    console.log('prodDomain: ', prodDomain)
     const sanitizedProdDomain = sanitizeDomain(prodDomain)
-    const tld = R.prop('tld', parseDomain(sanitizedProdDomain))
+    console.log('sanitizedProdDomain: ', sanitizedProdDomain)
     const sanitizedStagingDomain = sanitizeDomain(stagingDomain)
+    const previewProdDomain = createPreviewDomain(sanitizedProdDomain, 'prod', locale)
+    const previewStagingDomain = createPreviewDomain(sanitizedProdDomain, 'staging', locale)
 
     if (!cancelled) {
       console.log('Inside createNewProject$')
       const dbProjectObj = {
-        project: formValues.project,
-        prodDomain: sanitizedProdDomain,
-        stagingDomain: sanitizedStagingDomain,
-        previewProdDomain: createPreviewDomain(sanitizedProdDomain, 'prod', tld),
-        previewStagingDomain: createPreviewDomain(sanitizedProdDomain, 'staging', tld),
-        users: [formValues.email],
-        defaultLocale: formValues.locale,
-        locales: [formValues.locale],
-        domainMap: {
-          [tld]: formValues.locale
+        project: project,
+        projectDomain: sanitizedProdDomain,
+        prodDomains: [sanitizedProdDomain],
+        stagingDomains: [sanitizedStagingDomain],
+        previewProdDomains: [previewProdDomain],
+        previewStagingDomains: [previewStagingDomain],
+        users: {
+          superadmin: [email]
+        },
+        defaultLocale: locale,
+        localeMap: {
+          [locale]: {
+            prodDomain: sanitizedProdDomain,
+            stagingDomain: sanitizedStagingDomain,
+            previewProdDomain: previewProdDomain,
+            previewStagingDomain: previewStagingDomain
+          }
         }
       }
 
-      fetch(config.apiBase + '/api/projects?env=' + env, {
+      fetch(config.apiBase + '/api/projects', {
         method: 'post',
         headers: {
           'Accept': 'application/json',
@@ -67,9 +75,11 @@ export const addProjectToUser$$ = (formValues) => {
     let cancelled = false
 
     if (!cancelled) {
-      console.log('Inside createAddProjectToUser$')
+      console.log('Inside addProjectToUser$')
       const encodedEmail = encodeURIComponent(formValues.email)
-      const userUpdateObj = {projectDomain: formValues.prodDomain}
+      const sanitizedProdDomain = sanitizeDomain(formValues.prodDomain)
+      const userUpdateObj = {projectDomain: sanitizedProdDomain}
+      console.log('userUpdateObj: ', userUpdateObj)
 
       fetch(config.apiBase + '/api/users/' + encodedEmail, {
         method: 'put',

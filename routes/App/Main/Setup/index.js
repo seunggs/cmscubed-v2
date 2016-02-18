@@ -27,11 +27,12 @@ const Setup = React.createClass({
     const {location, rootState} = this.props
     const ids = createStateIds(5, location.pathname)
     const userEmail = localStorage.getItem('userEmail')
+    console.log('userEmail: ', userEmail)
 
     const isRequiredValidator = {attrName: 'is-required', predicateFunc: checkIsNotEmpty, errorMsg: 'This field is required'}
     const isCamelCasedValidator = {attrName: 'is-camelcased', predicateFunc: checkIsCamelCased, errorMsg: 'Project name must be camel cased'}
     const isDomainValidator = {attrName: 'is-domain', predicateFunc: checkIsDomain, errorMsg: 'Invalid domain'}
-    const isAvailableValidator = {attrName: 'is-available', predicateFunc: projectDomainIsAvailable$$, errorMsg: 'This project name is unavailable'}
+    const isAvailableValidator = {attrName: 'is-available', predicateFunc: projectDomainIsAvailable$$, errorMsg: 'This domain is unavailable'}
 
     return (
       <div id="setup" className="clearfix mxn2">
@@ -42,11 +43,11 @@ const Setup = React.createClass({
               <C3HiddenInput name="email" value={userEmail} />
               <C3Input id={ids[0]} name="project" rootState={rootState} labelText="Project Name" validators={[isRequiredValidator, isCamelCasedValidator]} autoFocus="true" />
               <C3Input id={ids[1]} name="prodDomain" rootState={rootState} labelText="Project Production Domain" validators={[isRequiredValidator, isDomainValidator]} asyncValidator={isAvailableValidator} />
-              <C3Input id={ids[2]} name="stagingDomain" rootState={rootState} labelText="Project Staging Domain" validators={[isRequiredValidator, isDomainValidator]} asyncValidator={isAvailableValidator} />
+              <C3Input id={ids[2]} name="stagingDomain" rootState={rootState} labelText="Project Staging Domain" validators={[isRequiredValidator, isDomainValidator]} />
               <C3Select id={ids[3]} name="locale" rootState={rootState} placeholder="Default Locale" validators={[isRequiredValidator]} selected={'en-US'}>
                 <C3Option value="en-US"></C3Option>
               </C3Select>
-              <C3SubmitButton id={ids[4]} ref="blah" rootState={rootState} nextRoute={'/dashboard'} createSubmitForm$={addNewProjectAndAddProjectToUser$$}>Next &rarr;</C3SubmitButton>
+              <C3SubmitButton id={ids[4]} ref="blah" rootState={rootState} nextRoute={'/loggedin'} createSubmitForm$={addNewProjectAndAddProjectToUser$$}>Next &rarr;</C3SubmitButton>
             </form>
           </div>
         </div>

@@ -10,13 +10,22 @@ const C3Select = React.createClass({
     return getElemState(id, rootState)
   },
   shouldComponentUpdate(nextProps) {
-    return !R.equals(nextProps.rootState, this.props.rootState)
+    const {id} = this.props
+    return !R.equals(getElemState(id, nextProps.rootState), this.getState())
   },
   componentDidMount() {
-    const {id} = this.props
+    const {id, selected} = this.props
+
+    // set default valid status to true if selected exists
+    if (!R.isNil(selected)) {
+      const isValid = true
+      sendStateChangeEvent(id, {isValid})
+    }
+
     // handle focus state on document
     Rx.Observable.fromEvent(document, 'click').subscribe(e => {
-      if (this._selectElem !== e.target) {
+      console.log('this._selectElem: ', this._selectElem)
+      if (!R.isNil(this._selectElem) && this._selectElem !== e.target) {
         if (this._selectElem.getAttribute('data-c3-select-focused') === 'true') {
           const isFocused = false
           sendStateChangeEvent(id, {isFocused})

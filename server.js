@@ -8,7 +8,6 @@ import methodOverride from 'method-override'
 import routes from './server/routes'
 import socketIo from 'socket.io'
 import websockets from './server/websockets/'
-import {getRouteContentFromDB, getPageContentFromDB} from './server/utils/db'
 
 const app = express()
 const server = Server(app)

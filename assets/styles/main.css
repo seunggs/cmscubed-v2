@@ -4,6 +4,7 @@
 @import './overrides/colors';
 @import './overrides/background-colors';
 @import './overrides/btn';
+@import './overrides/border';
 @import './modules/preview';
 @import './modules/c3-forms';
 @import './modules/c3-medium-editor';

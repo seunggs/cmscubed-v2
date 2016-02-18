@@ -34,5 +34,7 @@ export const requireAuth = (nextState, replace) => {
       pathname: '/',
       state: { nextPathname: nextState.location.pathname }
     })
+  } else {
+    console.log('logged in')
   }
 }

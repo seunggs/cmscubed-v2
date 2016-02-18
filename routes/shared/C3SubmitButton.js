@@ -11,7 +11,8 @@ const C3SubmitButton = React.createClass({
     return getElemState(id, rootState)
   },
   shouldComponentUpdate(nextProps) {
-    return !R.equals(nextProps.rooState, this.props.rooState)
+    const {id} = this.props
+    return !R.equals(getElemState(id, nextProps.rootState), this.getState())
   },
   getButtonTextElem(children, buttonState) {
     switch (buttonState) {
@@ -67,8 +68,6 @@ const C3SubmitButton = React.createClass({
     console.log('form values: ', this.getFormValues())
     createSubmitForm$(this.getFormValues()).subscribe(data => {
       console.log('Form submit return data: ', data)
-      if (!R.isNil(nextRoute)) { browserHistory.replace(nextRoute) }
-
       const buttonState = 'success'
       sendStateChangeEvent(id, {buttonState})
 
@@ -76,6 +75,7 @@ const C3SubmitButton = React.createClass({
         const buttonState = 'default'
         const disabled = 'false'
         sendStateChangeEvent(id, {buttonState, disabled})
+        if (!R.isNil(nextRoute)) { browserHistory.replace(nextRoute) }
       }, 2500)
     }, (err) => {
       const buttonState = 'error'

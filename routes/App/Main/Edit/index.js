@@ -1,19 +1,10 @@
 import React from 'react'
-import ContentInputs from './components/ContentInputs'
-import Preview from './components/Preview'
-import {getProjectRoute, getPageContent} from '../../../../modules/core/content'
 
-const Edit = ({location, rootContent}) => {
+const Edit = ({children}) => {
   console.log('Edit rendered')
-  console.log('rootContent: ', rootContent)
-  const projectRoute = getProjectRoute(location.pathname)
-  const pageContent = getPageContent(projectRoute, rootContent)
-  const projectUrl = 'http://www.terapeak.com'
-  const previewUrl = projectUrl + projectRoute
   return (
-    <div className="clearfix">
-      <Preview previewUrl={previewUrl} />
-      <ContentInputs projectRoute={projectRoute} pageContent={pageContent} />
+    <div>
+      {children}
     </div>
   )
 }

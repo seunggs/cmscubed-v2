@@ -12,7 +12,8 @@ const C3Input = React.createClass({
     return getElemState(id, rootState)
   },
   shouldComponentUpdate(nextProps) {
-    return !R.equals(nextProps.rootState, this.props.rootState)
+    const {id} = this.props
+    return !R.equals(getElemState(id, nextProps.rootState), this.getState())
   },
   handleBlur(e) {
     const {id, validators, asyncValidator} = this.props

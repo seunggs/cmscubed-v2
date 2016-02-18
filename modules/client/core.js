@@ -1,11 +1,22 @@
 import R from 'ramda'
 import Rx from 'rx-lite'
-import {updatePageContent$$} from './observables'
-import {getDomain, getProject, getEnv} from './project'
+import {updatePageContent$$, getInitContent$$} from './observables'
 
 /* --- PURE ----------------------------------------------------------------- */
 
 const log = x => { console.log(x); return x }
+
+// TODO: add test
+export const getCurrentDomain = (locationObj) => {
+  return locationObj.host + (locationObj.port ? ':' + locationObj.port : '')
+}
+
+// TODO: add test
+// isLocalEnv :: () -> Boolean
+export const isLocalEnv = (locationObj) => {
+  const currentDomain = getCurrentDomain(locationObj)
+  return currentDomain.indexOf(':') !== -1
+}
 
 // sanitizeRoute :: String -> String
 export const sanitizeRoute = R.curry(route => {
@@ -15,12 +26,11 @@ export const sanitizeRoute = R.curry(route => {
   return route
 })
 
-// sanitizeDomain :: String -> String
-// Strip the domain of protocol (i.e. 'http://')
-export const sanitizeDomain = R.compose(R.replace('http://', ''), R.replace('https://', ''))
+// getContentEnv :: String -> String
+export const getContentEnv = R.compose(R.toLower, R.replace('Domain', ''), R.replace('preview', ''))
 
-// createQueryStr :: [{*}] -> String
-export const createQueryStr = R.curry(queryObjsArray => {
+// createEncodedQueryStr :: [{*}] -> String
+export const createEncodedQueryStr = R.curry(queryObjsArray => {
   return R.tail(queryObjsArray.reduce((prev, curr) => {
     const key = R.head(Object.keys(curr))
     return prev + '&' + key + '=' + encodeURIComponent(curr[key])
@@ -71,8 +81,15 @@ export const createContentUpdateObj = R.curry((projectDomain, env, locale, route
   return {projectDomain, env, locale, route: sanitizedRoute, content: updatedPageContent}
 })
 
+// getContentFromSchemaObj :: {*} -> String -> {*}
+export const getContentFromSchemaObj = (localStorageObj, route) => {
+  return JSON.parse(localStorageObj.getItem(route))
+}
+
 // getPageContent :: String -> {*} -> {*}
 export const getPageContent = R.curry((route, rootContent) => {
+  if (R.isNil(rootContent)) { return undefined } // exit immediately if rootContent is undefined
+
   const sanitizedRoute = sanitizeRoute(route)
   const pageContent = R.prop(sanitizedRoute, rootContent)
   return pageContent
@@ -80,32 +97,81 @@ export const getPageContent = R.curry((route, rootContent) => {
 
 /* --- IMPURE --------------------------------------------------------------- */
 
-// setPageContentSchema :: String -> {*} -> {*} -> IMPURE (send event) + Boolean
-export const setPageContentSchema = (route, rootContent, schemaObj) => {
-  // Exit immediately if rootContent is undefined
-  if (R.isNil(rootContent)) { return false }
+// updatePageContentOnSchemaChange :: {*} -> String -> String -> {*} -> {*} -> IMPURE (send POST request)
+export const updatePageContentOnSchemaChange = (localStorageObj, currentDomain, route, rootContent, schemaObj) => {
+  if (R.isNil(rootContent)) { return false } // exit immediately if rootContent is undefined
 
   const sanitizedRoute = sanitizeRoute(route)
-  const pageContent = getPageContent(sanitizedRoute, rootContent)
+  const pageContent = getContent(sanitizedRoute, rootContent)
   const updatedPageContent = getUpdatedPageContentFromSchemaChange(pageContent, schemaObj)
 
   // Only send if content has changed
   if (!R.isNil(updatedPageContent)) {
-    if (typeof(window) !== 'undefined') {
-      const projectDomain = window.localStorage.getItem('projectDomain')
-      const env = window.localStorage.getItem('env')
-      const contentUpdateObj = createContentUpdateObj(projectDomain, env, locale, route, updatedPageContent)
-      updatePageContent(contentUpdateObj)
-    }
+    const projectDomain = currentDomain
+    const env = localStorageObj.getItem('env')
+    const locale = localStorageObj.getItem('locale')
+    const contentUpdateObj = createContentUpdateObj(projectDomain, env, locale, route, updatedPageContent)
+
+    updatePageContent$$(contentUpdateObj).subscribe(
+      () => console.log('Updated pageContent from schema change POST request sent!'),
+      err => console.log('Updating pageContent from schema change failed: ', err)
+    )
     return true
   }
   return false
 }
 
-// updatePageContent :: {*} -> IMPURE (send POST request)
-export const updatePageContent = contentUpdateObj => {
-  updatePageContent$$(contentUpdateObj).subscribe(
-    () => console.log('Updated pageContent from schema change POST request sent!'),
-    err => console.log('Updating pageContent from schema change failed: ', err)
-  )
+/* --- EXPOSED TO USER (IMPURE) --------------------------------------------- */
+
+// NO TEST
+// getRootContent :: String -> String -> [*] -> Observable (-> routeContent) + IMPURE (set localStorage)
+export const getRootContent = R.curry((projectDomain, route, excludedRoutes) => {
+  if (isLocalEnv(window.location)) { console.log('In local environment...') }
+
+  // If PREVIEW, send a socket event
+  // Otherwise, POST - but first call will always be POST since isPreview is unknown until after the first call
+  if (window.localStorage.getItem('isPreview')) {
+    // send socket.io event
+    console.log('In preview...')
+    // MUST RETURN AN Observable but which Observable? - Put preview condition inside the below else
+    // Return one Observable composed of two Observables - one fetch and one socket
+  } else {
+    const currentDomain = getCurrentDomain(window.location)
+    return getInitContent$$(projectDomain, currentDomain, route, excludedRoutes)
+      .map(initContentObj => {
+        const {projectDetails, env, isPreview, routeContent} = initContentObj
+
+        // First set localStorage items
+        window.localStorage.setItem('projectDetails', JSON.stringify(projectDetails))
+        window.localStorage.setItem('env', env) // prod or staging
+        window.localStorage.setItem('isPreview', isPreview)
+
+        // Then return routeContent to the client
+        return routeContent
+      })
+  }
+})
+
+// NO TEST
+// setContentSchema :: String -> {*} -> {*} -> IMPURE
+export const setContentSchema = (route, rootContent, schemaObj) => {
+  // Is this a local environment? Then save the schemaObj in localStorage for getContent() to use
+  if (isLocalEnv(window.location)) {
+    window.localStorage.setItem('localenv-' + route, JSON.stringify(schemaObj))
+  }
+
+  const currentDomain = getCurrentDomain(window.location)
+  updatePageContentOnSchemaChange(window.localStorage, currentDomain, route, rootContent, schemaObj)
 }
+
+// NO TEST
+// getContent :: String -> {*} -> {*}
+export const getContent = R.curry((route, rootContent) => {
+  // Is this a local environment? Then combine rootContent with schema to get the new content
+  // TODO: use getUpdatedPageContentFromSchemaChange
+  if (typeof(window) !== 'undefined') {
+    if (isLocalEnv(window.location)) { return getContentFromSchemaObj(window.localStorage, 'localenv-' + route) }
+  }
+
+  return getPageContent(route, rootContent)
+})

@@ -6,13 +6,19 @@ import {sanitizeRoute} from '../client/core'
 
 const log = x => { console.log(x); return x }
 
+// sanitizeDomain :: String -> String
+export const sanitizeDomain = R.curry(domain => {
+  const parsedDomain = parseDomain(domain)
+  return R.compose(R.join('.'), R.reject(R.isEmpty))([parsedDomain.subdomain, parsedDomain.domain, parsedDomain.tld])
+})
+
 // convertRouteToPathArray :: String -> [String]
 export const convertRouteToPathArray = R.compose(R.reject(R.isEmpty), R.split('/'))
 
 // createPreviewDomain :: String -> String
-export const createPreviewDomain = R.curry((prodDomain, env, tld) => {
+export const createPreviewDomain = R.curry((prodDomain, env, locale) => {
   const {subdomain, domain} = parseDomain(prodDomain)
-  return `c3-${subdomain}-${domain}-preview-${env}-${tld}.surge.sh`
+  return R.isEmpty(subdomain) ? `c3-${domain}-preview-${env}-${locale}.surge.sh` : `c3-${subdomain}-${domain}-preview-${env}-${locale}.surge.sh`
 })
 
 // getProjectRoute :: String -> String
@@ -57,5 +63,6 @@ export const convertDBContentObjsToContent = R.curry(dbContentObjs => {
   const content = dbContentObjs.reduce((prev, dbContentObj) => {
     return R.assoc(R.prop('route', dbContentObj), R.prop('content', dbContentObj), prev)
   }, {})
-  return content
+  console.log('content inside convertDBContentObjsToContent: ', content)
+  return R.isEmpty(content) ? {} : content
 })

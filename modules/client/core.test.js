@@ -1,14 +1,14 @@
 import test from 'tape'
 import {
   sanitizeRoute,
-  sanitizeDomain,
-  createQueryStr,
+  getContentEnv,
+  createEncodedQueryStr,
   deepCopyValues,
   getUpdatedPageContentFromSchemaChange,
   createContentUpdateObj,
   getPageContent,
   // IMPURE
-  setPageContentSchema
+  updatePageContentOnSchemaChange
 } from './core'
 
 test('sanitizeRoute()', assert => {
@@ -38,59 +38,49 @@ test('sanitizeRoute()', assert => {
   assert.end()
 })
 
-test('sanitizeDomain()', assert => {
-  const domain = 'http://www.blah.com'
-  const actual = sanitizeDomain(domain)
-  const expected = 'www.blah.com'
+test('getContentEnv()', assert => {
+  const env = 'previewStagingDomain'
+  const actual = getContentEnv(env)
+  const expected = 'staging'
 
   assert.equal(actual, expected,
-    `Given a domain with protocol, sanitizeDomain() should return a domain
-    without the protocol`)
+    `Given an env string with 'preview' and 'Domain', getContentEnv() should
+    return an env string without 'preview' or 'Domain' in lowercase`)
 
   /* -------------------- */
 
-  const domain2 = 'https://www.blah.com'
-  const actual2 = sanitizeDomain(domain2)
-  const expected2 = 'www.blah.com'
+  const env2 = 'prod'
+  const actual2 = getContentEnv(env2)
+  const expected2 = 'prod'
 
   assert.equal(actual2, expected2,
-    `Given a domain with ssl protocol, sanitizeDomain() should return a domain
-    without the protocol`)
+    `Given an env string without 'preview', getContentEnv() should return
+    the original env string`)
 
   /* -------------------- */
 
-  const domain3 = '/www.blah.com'
-  const actual3 = sanitizeDomain(domain3)
-  const expected3 = '/www.blah.com'
+  const env3 = 'previewProd'
+  const actual3 = getContentEnv(env3)
+  const expected3 = 'prod'
 
   assert.equal(actual3, expected3,
-    `Given a domain with a slash in front, sanitizeDomain() should return
-    the same domain (since slash in front is not a protocol)`)
-
-  /* -------------------- */
-
-  const domain4 = 'www.blah.com'
-  const actual4 = sanitizeDomain(domain4)
-  const expected4 = 'www.blah.com'
-
-  assert.equal(actual4, expected4,
-    `Given a domain without a protocol, sanitizeDomain() should return
-    the same domain`)
+    `Given an env string with 'preview', getContentEnv() should return
+    an env string without 'preview' in lowercase`)
 
   assert.end()
 })
 
-test('createQueryStr()', assert => {
-  const project = 'test'
+test('createEncodedQueryStr()', assert => {
+  const projectDomain = 'test.com'
   const env = 'preview'
   const locale = 'en-US'
   const route = '/products/pro'
-  const queryArray = [{project}, {env}, {locale}, {route}]
-  const actual = createQueryStr(queryArray)
-  const expected = 'project=test&env=preview&locale=en-US&route=%2Fproducts%2Fpro'
+  const queryArray = [{projectDomain}, {env}, {locale}, {route}]
+  const actual = createEncodedQueryStr(queryArray)
+  const expected = 'projectDomain=test.com&env=preview&locale=en-US&route=%2Fproducts%2Fpro'
 
   assert.equal(actual, expected,
-    `Given an array of variables, createQueryStr() should create a query
+    `Given an array of variables, createEncodedQueryStr() should create a query
     string such as var1Name=encodedVar1Value&var2Name=encodedVar2Value`)
 
   assert.end()
@@ -280,14 +270,29 @@ test('getPageContent()', assert => {
   const expected2 = undefined
 
   assert.deepEqual(actual2, expected2,
-    `Given no matching route, it should return undefined`)
+    `Given no matching route, getPageContent() should return undefined`)
+
+  /* -------------------- */
+
+  const route3 = '/products/pro'
+  const rootContent3 = undefined
+  const actual3 = getPageContent(route3, rootContent3)
+  const expected3 = undefined
+
+  assert.deepEqual(actual3, expected3,
+    `Given an undefined rootContent, getPageContent() should return undefined`)
 
   assert.end()
 })
 
 /* --- IMPURE --------------------------------------------------------------- */
 
-test('setPageContentSchema()', assert => {
+test('updatePageContentOnSchemaChange()', assert => {
+  const localStorageMock = {
+    getItem(key) { return },
+    setItem(key, value) { return }
+  }
+  const currentDomain = 'cmscubed-test.com'
   const route = '/products'
   const rootContent = {
     '/': {
@@ -301,12 +306,12 @@ test('setPageContentSchema()', assert => {
     heading: 'Products heading',
     text: 'Products text'
   }
-  const actual = setPageContentSchema(route, rootContent, schemaObj)
+  const actual = updatePageContentOnSchemaChange(localStorageMock, currentDomain, route, rootContent, schemaObj)
   const expected = true
 
   assert.equal(actual, expected,
     `If schemaObj has different keys from current pageContent,
-    setPageContentSchema() should return true`)
+    updatePageContentOnSchemaChange() should return true`)
 
   /* -------------------- */
 
@@ -322,7 +327,7 @@ test('setPageContentSchema()', assert => {
   const schemaObj2 = {
     heading: 'Products heading'
   }
-  const actual2 = setPageContentSchema(route2, rootContent2, schemaObj2)
+  const actual2 = updatePageContentOnSchemaChange(localStorageMock, currentDomain, route2, rootContent2, schemaObj2)
   const expected2 = false
 
   assert.equal(actual2, expected2,
@@ -336,7 +341,7 @@ test('setPageContentSchema()', assert => {
   const schemaObj3 = {
     heading: 'Products heading'
   }
-  const actual3 = setPageContentSchema(route3, rootContent3, schemaObj3)
+  const actual3 = updatePageContentOnSchemaChange(localStorageMock, currentDomain, route3, rootContent3, schemaObj3)
   const expected3 = false
 
   assert.equal(actual3, expected3,

@@ -9,6 +9,10 @@ const OnOff = React.createClass({
     const {id, rootState} = this.props
     return getElemState(id, rootState)
   },
+  shouldComponentUpdate(nextProps) {
+    const {id} = this.props
+    return !R.equals(getElemState(id, nextProps.rootState), this.getState())
+  },
   componentDidMount() {
     const {id} = this.props
     console.log('id: ', id)
@@ -21,6 +25,7 @@ const OnOff = React.createClass({
     sendStateChangeEvent(id, {isOn: isOn ? false : true})
   },
   render() {
+    console.log('OnOff rendered')
     const {buttonColor = '#fff', onColor = '#ac3520', offColor = '#0e9e2a', onText = 'On', offText = 'Off', width = 32, height = 16} = this.props
     const {isOn} = this.getState()
     const bgColor = isOn ? onColor : offColor

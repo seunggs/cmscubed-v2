@@ -1,1 +1,2 @@
-* Project name is for display only - domain is the id! Fix everything
+BUGS
+* eventplugin issue on sign up (into /edit)

@@ -6,6 +6,7 @@ import Rx from 'rx-lite'
 import R from 'ramda'
 import Auth0Lock from 'auth0-lock'
 import {setIdToken, getIdToken, requireAuth} from './modules/auth/'
+import {setProjectDetails} from './modules/core/state'
 import socket from './modules/websockets/'
 
 import {content$} from './modules/observables/content'
@@ -18,9 +19,10 @@ import Login from './routes/App/Login/'
 import LoggedIn from './routes/App/LoggedIn/'
 import Register from './routes/App/Register/'
 import Main from './routes/App/Main/'
-import Edit from './routes/App/Main/Edit/'
 import Setup from './routes/App/Main/Setup/'
-import Dashboard from './routes/App/Main/Dashboard/'
+import Edit from './routes/App/Main/Edit/'
+import Dashboard from './routes/App/Main/Edit/Dashboard/'
+import EditPage from './routes/App/Main/Edit/EditPage/'
 
 // combine content$ and states$
 const app$ = Rx.Observable.combineLatest(content$, state$)
@@ -32,8 +34,10 @@ const routes = (
     <Route path="register" component={Register} />
     <Route path="main" component={Main} onEnter={requireAuth}>
       <Route path="/setup" component={Setup} />
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/edit/:page" component={Edit} />
+      <Route path="/edit" component={Edit} onEnter={setProjectDetails}> {/* set projectDetails onEnter */}
+        <IndexRoute component={Dashboard} />
+        <Route path=":page" component={EditPage} />
+      </Route>
     </Route>
   </Route>
 )
@@ -43,8 +47,8 @@ app$.subscribe(change => {
   const createElement = (Component, props) => {
     const rootContent = change[0]
     const rootState = change[1]
-    console.log('content changed! ', rootContent)
-    console.log('state changed! ', rootState)
+    // console.log('content changed! ', rootContent)
+    // console.log('state changed! ', rootState)
     const lock = new Auth0Lock('KWe4lMDVwFR9GPquF4yuZ327Xg2sXt1p', 'cmscubed.auth0.com')
     return <Component {...props} rootContent={rootContent} rootState={rootState} lock={lock} />
   }

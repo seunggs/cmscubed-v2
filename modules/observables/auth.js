@@ -17,12 +17,12 @@ export const addUserProfile$$ = (lock, idToken) => {
         },
         body: JSON.stringify(profile)
       })
-      .then(res => res.json())
-      .then(userObj => {
-        observer.onNext(userObj)
-        observer.onCompleted()
-      })
-      .catch(err => observer.onError(err))
+        .then(res => res.json())
+        .then(userObj => {
+          observer.onNext(userObj)
+          observer.onCompleted()
+        })
+        .catch(err => observer.onError(err))
     })
 
     return () => console.log('Disposed')
@@ -40,11 +40,11 @@ export const getUserProject$$ = userEmail => {
           observer.onNext(null)
           observer.onCompleted()
         } else {
-          if (!R.prop('projectDomain', R.head(userObj))) {
+          if (!R.prop('projectDomain', userObj)) {
             observer.onNext(null)
             observer.onCompleted()
           } else {
-            observer.onNext(R.head(userObj).projectDomain)
+            observer.onNext(userObj.projectDomain)
             observer.onCompleted()
           }
         }

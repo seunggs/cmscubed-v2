@@ -5,10 +5,12 @@ NAMING CONVENTIONS
 * pathArray (i.e. ['products', 'hacker']): array of paths
 * schemaObj: initial content objects whose keys only matter (not values)
 * typesObj: type of each content field (i.e. matrix, slider, onOff, etc)
-* contentUpdateObj: {project, locale, route, content} for transfer from client to server
+* contentRequestObj: {projectDomain, env, locale, route} for getting content
+* contentUpdateObj: {projectDomain, env, locale, route, content} for updating content
 * oldNewContentPair: [oldContent, [route, newContent]]
 * dbBackupObj: an object of mostly meta data inside DB for a changed route (for backup/undo purposes)
 * dbContentObj: entry obj in contents table (i.e. {project: 'Project', locale: 'en-US', route: '/', content: {heading: "Home"}})
+* contentInitObj: {projectDetails, env, isPreview, requestRouteContent} sent from the server on initial content request (for the client)
 
 
 DATA FLOW
@@ -27,19 +29,37 @@ DATA FLOW
   -> Client (routeContent/pageContent)
 
 
-DOCUMENTATION
--------------
+CLIENT-SIDE DOCUMENTATION
+-------------------------
 FOR USER:
-1) Set schemaObj (optionally, set typesObj) - waits for projectName & env in localStorage
-2) Run getPageContent, getRouteContent, or getRootContent
+1) On entry file, call getRootContent(projectDomain, route, [excluded routes]) - returns on observable
+   NOTE: projectDomain here is not technically required, but added for optimized DB query with secondary index rather than a lot of filtering since performance here is critical
+2) Set schemaObj (optionally, set typesObj) - waits for rootContent & projectDetails in localStorage
+3) Run getContent()
 
 FOR ME:
-1) Wipe out projectName and env from localStorage
-2) Get projectName & env from DB and save it to localStorage (then send out 'env:set' event) - if not found, do nothing from here on
-3) If env is PREVIEW, load Socket.io-client
-4) setPageContentSchema sends events that accumulates (like state$) and sends schema to server/DB when env is ready
-5a) if PREVIEW, rootContent arrives asynchronously and routes are updated automatically
-5b) if NOT PREVIEW, getPageContent waits for async prop or state
+0) Provide a placeholder for content until the content arrives and populates
+1) First on app load, get current domain and run getRootContent()
+   -> get projectDetails (using domain, env, locale) and rootContent from DB
+1a) If current domain is local, use the schemaObj locally (but check localStorage first for rootContent - from the last iteration)
+2) When routeContent & projectDetails arrive, save projectDetails, env, isPreview in localStorage and return routeContent
+3) Compare the setContentSchema with rootContent in localStorage and if different:
+  1) Send out the new contentUpdateObj
+  2) Update the rootContent in localStorage with the new contentUpdateObj
+  3) Have page just use rootContent as usual
+  4) Make sure to put setContentSchema above getPageCont
+
++) If PREVIEW (i.e. current domain matches one of the preview domains):
+  1) POST call and if PREVIEW, set PREVIEW=true in localStorage
+  2) load socket.io client
+  3) Instead of doing a GET for getRootContent(), emit a socket.io event and receive it too
+  4) Receive field update events and update the content real-time
+  5) Use mutation observer to highlight the part that's being edited
++) If local (i.e. localhost:port):
+  1) Do nothing for getRootContent()
+  2) setContentSchema should save itself in localStorage (for getContent)
+  3) getContent should grab content from localStorage
+
 
 OTHER NOTES
 -----------
@@ -50,7 +70,6 @@ EXAMPLE DB STRUCTURE
 --------------------
 const exContentsDBEntry1 = {
   projectDomain: "test.com",
-  locale: "en-US",
   route: "$global",
   content: {
     cta: "Free trial"
@@ -58,7 +77,6 @@ const exContentsDBEntry1 = {
 }
 const exContentsDBEntry2 = {
   projectDomain: "test.com",
-  locale: "en-US",
   route: "/",
   content: {
     heading: "Home heading"
@@ -66,7 +84,6 @@ const exContentsDBEntry2 = {
 }
 const exContentsDBEntry3 = {
   projectDomain: "test.com",
-  locale: "en-US",
   route: "/products/pro",
   content: {
     heading: "Pro heading",
@@ -76,7 +93,6 @@ const exContentsDBEntry3 = {
 
 const exBackupsDBEntry = {
   projectDomain: "test.com",
-  locale: "en-US",
   changeType: "schema", // "schema" or "content"
   time: 1454170581,
   route: "/products",
@@ -95,15 +111,28 @@ const exUsersDBEntry = {
 
 const exProjectsDBEntry = {
   name: "Project Name",
-  prodDomain: "blah.com",
-  stagingDomain: "staging.blah.com",
-  previewProdDomain: "preview.blah.com",
-  previewStagingDomain: "preview.blah.com",
-  users: ["blah@gmail.com", "blahblah@gmail.com"],
+  projectDomain: "blah.com", // this is the identifier (including subdomain)
+  localDomains: ["127.0.0.1"],
+  prodDomains: ["blah.com", "blah.fr"],
+  stagingDomains: ["staging.blah.com", "staging.blah.fr"],
+  previewProdDomains: ["preview.blah.com"],
+  previewStagingDomains: ["preview.staging.blah.com"],
+  users: {
+    superadmin: ['blah@blah.com'],
+    admin: ['blah@blah.com'],
+    readonly: ['blah@blah.com']
+  },
   defaultLocale: "en-US",
-  locales: ["en-US", "fr-FR"],
-  domainMap: {
-    "com": "en-US"
+  localeMap: {
+    "en-US": {
+      prodDomain: "blah.com",
+      stagingDomain: "staging.blah.com",
+      previewProdDomain: "preview.blah.com",
+      previewStagingDomain: "preview.staging.blah.com"
+    },
+    "fr-FR": {
+      prodDomain: "blah.fr"
+    }
   }
 }
 

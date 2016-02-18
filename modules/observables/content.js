@@ -1,6 +1,8 @@
 import Rx from 'rx-lite'
 import socket from '../websockets/'
 import R from 'ramda'
+import config from '../../client-config'
+import {createEncodedQueryStr} from '../client/core'
 
 /*
   STRATEGY:
@@ -10,23 +12,7 @@ import R from 'ramda'
   - Handle any errors from server/DB
 */
 
-export const initRouteContent$$ = (project, route) => {
-  return Rx.Observable.create(observer => {
-    let cancelled = false
-    if (!cancelled) {
-      socket.emit('routeContent:get', {project, route})
-      socket.on('routeContent:fromDB', content => {
-        observer.onNext(content)
-      })
-    }
-    return () => {
-      cancelled = true
-      console.log('initRouteContent$ disposed')
-    }
-  })
-}
-
-export const routeContentFromDB$ = Rx.Observable.create(observer => {
+export const getUpdatedRouteContentFromDB$ = Rx.Observable.create(observer => {
   let cancelled = false
   if (!cancelled) {
     socket.on('routeContent:fromDB', content => {
@@ -42,5 +28,5 @@ export const routeContentFromDB$ = Rx.Observable.create(observer => {
 }).scan(R.merge)
 
 export const content$ = Rx.Observable.merge(
-  routeContentFromDB$
+  getUpdatedRouteContentFromDB$
 )

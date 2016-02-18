@@ -1,6 +1,7 @@
 import test from 'tape'
 import sinon from 'sinon'
 import {
+  sanitizeDomain,
   convertRouteToPathArray,
   createPreviewDomain,
   getPageContent,
@@ -9,6 +10,78 @@ import {
   isValidLocale,
   convertDBContentObjsToContent
 } from './content'
+
+test('sanitizeDomain()', assert => {
+  const domain = 'http://www.blah.com'
+  const actual = sanitizeDomain(domain)
+  const expected = 'www.blah.com'
+
+  assert.equal(actual, expected,
+    `Given a domain with protocol, sanitizeDomain() should return a domain
+    without the protocol`)
+
+  /* -------------------- */
+
+  const domain2 = 'https://www.blah.com'
+  const actual2 = sanitizeDomain(domain2)
+  const expected2 = 'www.blah.com'
+
+  assert.equal(actual2, expected2,
+    `Given a domain with ssl protocol, sanitizeDomain() should return a domain
+    without the protocol`)
+
+  /* -------------------- */
+
+  const domain3 = '/www.blah.com'
+  const actual3 = sanitizeDomain(domain3)
+  const expected3 = '/www.blah.com'
+
+  assert.equal(actual3, expected3,
+    `Given a domain with a slash in front, sanitizeDomain() should return
+    the same domain (since slash in front is not a protocol)`)
+
+  /* -------------------- */
+
+  const domain4 = 'www.blah.com'
+  const actual4 = sanitizeDomain(domain4)
+  const expected4 = 'www.blah.com'
+
+  assert.equal(actual4, expected4,
+    `Given a domain without a protocol, sanitizeDomain() should return
+    the same domain`)
+
+  /* -------------------- */
+
+  const domain5 = 'blah.com'
+  const actual5 = sanitizeDomain(domain5)
+  const expected5 = 'blah.com'
+
+  assert.equal(actual5, expected5,
+    `Given a domain without a subdomain, sanitizeDomain() should return
+    a proper domain (i.e. without '.' in front)`)
+
+  /* -------------------- */
+
+  const domain6 = 'blah.co.uk'
+  const actual6 = sanitizeDomain(domain6)
+  const expected6 = 'blah.co.uk'
+
+  assert.equal(actual6, expected6,
+    `Given a domain with different tld, sanitizeDomain() should return
+    a proper domain`)
+
+  /* -------------------- */
+
+  const domain7 = 'http://blah.blah.family'
+  const actual7 = sanitizeDomain(domain7)
+  const expected7 = 'blah.blah.family'
+
+  assert.equal(actual7, expected7,
+    `Given a domain with a unique tld, sanitizeDomain() should return
+    a proper domain`)
+
+  assert.end()
+})
 
 test('convertRouteToPathArray()', assert => {
   const route = '/products/pro/overview'
@@ -24,13 +97,25 @@ test('convertRouteToPathArray()', assert => {
 test('createPreviewDomain()', assert => {
   const domain = 'https://www.blah.com'
   const env = 'staging'
-  const tld = 'com'
-  const actual = createPreviewDomain(domain, env, tld)
-  const expected = 'c3-www-blah-preview-staging-com.surge.sh'
+  const locale = 'en-US'
+  const actual = createPreviewDomain(domain, env, locale)
+  const expected = 'c3-www-blah-preview-staging-en-US.surge.sh'
 
   assert.equal(actual, expected,
     `Given a domain and env, createPreviewDomain() should return a preview
     url consisting of prefix, subdomain, domain, and env`)
+
+  /* -------------------- */
+
+  const domain2 = 'blah.com'
+  const env2 = 'staging'
+  const locale2 = 'en-US'
+  const actual2 = createPreviewDomain(domain2, env2, locale2)
+  const expected2 = 'c3-blah-preview-staging-en-US.surge.sh'
+
+  assert.equal(actual2, expected2,
+    `Given a domain without subdomain and env, createPreviewDomain() should
+    return a preview url consisting of prefix, subdomain, domain, and env`)
 
   assert.end()
 })
@@ -275,6 +360,16 @@ test('convertDBContentObjsToContent()', assert => {
   assert.deepEqual(actual, expected,
     `Given dbContentObj array from DB, convertDBContentObjsToContent() should
     return a content object consumable by the client`)
+
+  /* -------------------- */
+
+  const dbContentObjs2 = []
+  const actual2 = convertDBContentObjsToContent(dbContentObjs2)
+  const expected2 = {}
+
+  assert.deepEqual(actual2, expected2,
+    `Given an empty dbContentObj array from DB, convertDBContentObjsToContent()
+    should return an empty object`)
 
   assert.end()
 })

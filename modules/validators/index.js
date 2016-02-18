@@ -25,12 +25,12 @@ export const checkIsDomain = str => {
 }
 
 // TODO: add test
-export const projectDomainIsAvailable$$ = domain => {
+export const projectDomainIsAvailable$$ = projectDomain => {
   return Rx.Observable.create(observer => {
     let cancelled = false
 
     if (!cancelled) {
-      fetch(config.apiBase + '/api/projects?searchBySecondaryIndex=domain,' + encodeURIComponent(domain))
+      fetch(config.apiBase + '/api/projects?searchBySecondaryIndex=projectDomain,' + encodeURIComponent(projectDomain))
         .then(res => {
           return res.json()
         })
