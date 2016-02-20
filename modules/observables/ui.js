@@ -16,7 +16,7 @@ export const sendContentFieldFromEditor$$ = thisElem => {
 export const addNewProject$$ = formValues => {
   return Rx.Observable.create(observer => {
     let cancelled = false
-    const {prodDomain, stagingDomain, locale, email, project} = formValues
+    const {prodDomain, stagingDomain, localDomain, locale, email, project} = formValues
     console.log('prodDomain: ', prodDomain)
     const sanitizedProdDomain = sanitizeDomain(prodDomain)
     console.log('sanitizedProdDomain: ', sanitizedProdDomain)
@@ -29,6 +29,10 @@ export const addNewProject$$ = formValues => {
       const dbProjectObj = {
         project: project,
         projectDomain: sanitizedProdDomain,
+        localMappedTo: { // which env content to show if user is on local env
+          locale: locale,
+          domain: 'stagingDomain'
+        },
         prodDomains: [sanitizedProdDomain],
         stagingDomains: [sanitizedStagingDomain],
         previewProdDomains: [previewProdDomain],

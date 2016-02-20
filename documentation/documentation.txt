@@ -32,22 +32,24 @@ DATA FLOW
 CLIENT-SIDE DOCUMENTATION
 -------------------------
 FOR USER:
-1) On entry file, call getRootContent(projectDomain, route, [excluded routes]) - returns on observable
+1) On entry file, call getRootContent(projectDomain, route, {excluded routes:[], contentPlaceholder:true}) - returns on observable
    NOTE: projectDomain here is not technically required, but added for optimized DB query with secondary index rather than a lot of filtering since performance here is critical
 2) Set schemaObj (optionally, set typesObj) - waits for rootContent & projectDetails in localStorage
 3) Run getContent()
 
 FOR ME:
-0) Provide a placeholder for content until the content arrives and populates
 1) First on app load, get current domain and run getRootContent()
    -> get projectDetails (using domain, env, locale) and rootContent from DB
-1a) If current domain is local, use the schemaObj locally (but check localStorage first for rootContent - from the last iteration)
-2) When routeContent & projectDetails arrive, save projectDetails, env, isPreview in localStorage and return routeContent
-3) Compare the setContentSchema with rootContent in localStorage and if different:
+2) Before they arrive, save contentSchema in localStorage (key: contentSchema)
+   -> and use it to immediately show content with placeholders (i.e. ----) or with default content (default is set to show placeholders)
+3) When routeContent & projectDetails arrive, save projectDetails, env, isPreview, contentPlaceholder in localStorage and return routeContent
+4) Compare the contentSchema with rootContent in localStorage (use getUpdatedPageContentFromSchemaChange())
+4a) If contentSchema === rootContent, use rootContent to update the displayed content with placeholders
+4b) If contentSchema !== rootContent
   1) Send out the new contentUpdateObj
-  2) Update the rootContent in localStorage with the new contentUpdateObj
-  3) Have page just use rootContent as usual
-  4) Make sure to put setContentSchema above getPageCont
+  2) Use the new contentUpdateObj to show content immediately (i.e. optimistic update)
+  * NOTE: Make sure to put setContentSchema above getPageContent
+  3) OPTIONAL: update the content JSON with the new contentUpdateObj - so that next time, it can be called locally
 
 +) If PREVIEW (i.e. current domain matches one of the preview domains):
   1) POST call and if PREVIEW, set PREVIEW=true in localStorage
@@ -55,10 +57,6 @@ FOR ME:
   3) Instead of doing a GET for getRootContent(), emit a socket.io event and receive it too
   4) Receive field update events and update the content real-time
   5) Use mutation observer to highlight the part that's being edited
-+) If local (i.e. localhost:port):
-  1) Do nothing for getRootContent()
-  2) setContentSchema should save itself in localStorage (for getContent)
-  3) getContent should grab content from localStorage
 
 
 OTHER NOTES

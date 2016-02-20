@@ -2,7 +2,7 @@ import Rx from 'rx-lite'
 import R from 'ramda'
 import rdb from '../config/rdbdash'
 import {convertDBContentObjsToContent} from '../../modules/core/content'
-import {getContentEnv} from '../../modules/client/core'
+import {convertEnvToShortEnv} from '../../modules/client/core'
 
 // getProjectDetailsBySecondaryIndexFromDB$$ :: String -> String -> Observable({*})
 export const getProjectDetailsBySecondaryIndexFromDB$$ = (key, value) => {
@@ -175,7 +175,7 @@ export const createProjectInDB$$ = projectDetails => {
 // Get all contents that are children of a given route in Contents_[locale]_[env] table
 // Returns a single client-side routeContent object
 export const getRouteContentFromDB$$ = (projectDomain, env, locale, route) => {
-  const contentEnv = getContentEnv(env)
+  const contentEnv = convertEnvToShortEnv(env)
   const localeWithUnderscore = locale.replace('-', '_')
   return Rx.Observable.create(observer => {
     let cancelled = false
@@ -204,7 +204,7 @@ export const getRouteContentFromDB$$ = (projectDomain, env, locale, route) => {
 // Get all contents that are children of a given route in Contents_[locale]_[env] table WITH ROUTE EXCLUSIONS
 // Returns a single client-side routeContent object
 export const getSelectRouteContentFromDB$$ = (projectDomain, env, locale, route, excludedRoutes) => {
-  const contentEnv = getContentEnv(env)
+  const contentEnv = convertEnvToShortEnv(env)
   const localeWithUnderscore = locale.replace('-', '_')
   return Rx.Observable.create(observer => {
     let cancelled = false
@@ -245,7 +245,7 @@ export const getSelectRouteContentFromDB$$ = (projectDomain, env, locale, route,
 // Get dbContentObj of a given route only (not children) in Contents-[env] table
 // Returns a single client-side routeContent object)
 export const getPageContentFromDB$$ = (projectDomain, env, locale, route) => {
-  const contentEnv = getContentEnv(env)
+  const contentEnv = convertEnvToShortEnv(env)
   const localeWithUnderscore = locale.replace('-', '_')
   return Rx.Observable.create(observer => {
     let cancelled = false
@@ -271,7 +271,7 @@ export const getPageContentFromDB$$ = (projectDomain, env, locale, route) => {
 // updatePageContentInDB$$ :: {*} -> Observable(-> {*})
 // Update dbContentObj of a given route only (not children) in Contents-[env] table (returns a dbRes object)
 export const updatePageContentInDB$$ = (projectDomain, env, locale, route, content) => {
-  const contentEnv = getContentEnv(env)
+  const contentEnv = convertEnvToShortEnv(env)
   const localeWithUnderscore = locale.replace('-', '_')
   return Rx.Observable.create(observer => {
     let cancelled = false
@@ -282,13 +282,13 @@ export const updatePageContentInDB$$ = (projectDomain, env, locale, route, conte
         .run()
         .then(dbRes => {
           if (R.equals(0, dbRes.length)) {
-            const dbContentObj = R.dissoc('env', contentUpdateObj)
-            return rdb.table('contents_' + contentEnv)
+            // TODO: add projectDomain and put the content under key: content; also add route
+            const dbContentObj = {projectDomain, route, content}
+            return rdb.table('contents_' + localeWithUnderscore + '_' + contentEnv)
               .insert(dbContentObj)
           } else {
-            return rdb.table('contents_' + contentEnv)
+            return rdb.table('contents_' + localeWithUnderscore + '_' + contentEnv)
               .getAll(projectDomain, {index: 'projectDomain'})
-              .filter({locale: locale})
               .filter({route: route})
               .update({content: content})
           }

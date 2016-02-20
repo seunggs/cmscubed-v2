@@ -1,15 +1,68 @@
+import 'leaked-handles'
 import test from 'tape'
 import {
+  getCurrentDomain,
+  isLocalEnv,
   sanitizeRoute,
-  getContentEnv,
+  convertEnvToShortEnv,
   createEncodedQueryStr,
+  deepKeysEqual,
   deepCopyValues,
   getUpdatedPageContentFromSchemaChange,
   createContentUpdateObj,
   getPageContent,
+  replaceContentSchemaValuesWithPlaceholders,
   // IMPURE
   updatePageContentOnSchemaChange
 } from './core'
+
+test('getCurrentDomain()', assert => {
+  const mockLocationObj = {
+    hostname: '127.0.0.1',
+    port: '4000'
+  }
+  const actual = getCurrentDomain(mockLocationObj)
+  const expected = '127.0.0.1:4000'
+
+  assert.equal(actual, expected,
+    `Given a window.location object, getCurrentDomain() should return
+    current domain, including port if any`)
+
+  /* -------------------- */
+
+  const mockLocationObj2 = {
+    hostname: 'www.cmscubed-test.com',
+    port: null
+  }
+  const actual2 = getCurrentDomain(mockLocationObj2)
+  const expected2 = 'www.cmscubed-test.com'
+
+  assert.equal(actual2, expected2,
+    `Given a window.location object, getCurrentDomain() should return
+    current domain, including port if any`)
+
+  assert.end()
+})
+
+test('isLocalEnv()', assert => {
+  const domain = '127.0.0.1:4000'
+  const actual = isLocalEnv(domain)
+  const expected = true
+
+  assert.equal(actual, expected,
+    `Given a domain, isLocalEnv() should return true if domain is local`)
+
+  /* -------------------- */
+
+  const domain2 = 'cmscubed-test.com'
+  const actual2 = isLocalEnv(domain2)
+  const expected2 = false
+
+  assert.equal(actual2, expected2,
+    `Given a domain, isLocalEnv() should return false if domain is not local`)
+
+  assert.end()
+})
 
 test('sanitizeRoute()', assert => {
   const route = '/products/'
@@ -38,33 +91,33 @@ test('sanitizeRoute()', assert => {
   assert.end()
 })
 
-test('getContentEnv()', assert => {
+test('convertEnvToShortEnv()', assert => {
   const env = 'previewStagingDomain'
-  const actual = getContentEnv(env)
+  const actual = convertEnvToShortEnv(env)
   const expected = 'staging'
 
   assert.equal(actual, expected,
-    `Given an env string with 'preview' and 'Domain', getContentEnv() should
+    `Given an env string with 'preview' and 'Domain', convertEnvToShortEnv() should
     return an env string without 'preview' or 'Domain' in lowercase`)
 
   /* -------------------- */
 
   const env2 = 'prod'
-  const actual2 = getContentEnv(env2)
+  const actual2 = convertEnvToShortEnv(env2)
   const expected2 = 'prod'
 
   assert.equal(actual2, expected2,
-    `Given an env string without 'preview', getContentEnv() should return
+    `Given an env string without 'preview', convertEnvToShortEnv() should return
     the original env string`)
 
   /* -------------------- */
 
   const env3 = 'previewProd'
-  const actual3 = getContentEnv(env3)
+  const actual3 = convertEnvToShortEnv(env3)
   const expected3 = 'prod'
 
   assert.equal(actual3, expected3,
-    `Given an env string with 'preview', getContentEnv() should return
+    `Given an env string with 'preview', convertEnvToShortEnv() should return
     an env string without 'preview' in lowercase`)
 
   assert.end()
@@ -82,6 +135,120 @@ test('createEncodedQueryStr()', assert => {
   assert.equal(actual, expected,
     `Given an array of variables, createEncodedQueryStr() should create a query
     string such as var1Name=encodedVar1Value&var2Name=encodedVar2Value`)
+
+  assert.end()
+})
+
+test('deepKeysEqual()', assert => {
+  const objA = {
+    a: {
+      x: {
+        d: 'd',
+        e: ['e1', 'e2'],
+        f: {
+          g: 'g'
+        }
+      },
+      y: ['y1', 'y2']
+    },
+    b: ['b1', 'b2'],
+    c: 'c'
+  }
+  const objB = {
+    b: ['b1', 'b2'],
+    a: {
+      x: {
+        e: ['e1', 'e2'],
+        f: {
+          g: 'g'
+        },
+        d: 'd'
+      },
+      y: ['y1', 'y2']
+    },
+    c: 'c'
+  }
+  const actual = deepKeysEqual(objA, objB)
+  const expected = true
+
+  assert.equal(actual, expected,
+    `Given two objects with same keys (in all depths) even with different
+    order, deepKeysEqual() should return true`)
+
+  /* -------------------- */
+
+  const objA2 = {
+    a: {
+      x: {
+        d: 'd',
+        e: ['e1', 'e2'],
+        f: {
+          g: 'g'
+        }
+      },
+      y: ['y1', 'y2']
+    },
+    b: ['b1', 'b2'],
+    c: 'c'
+  }
+  const objB2 = {
+    b: ['b1', 'b2'],
+    a: {
+      x: {
+        e: ['e1', 'e2'],
+        f: {
+          g: 'g',
+          different: 'different key!'
+        },
+        d: 'd'
+      },
+      y: ['y1', 'y2']
+    },
+    c: 'c'
+  }
+  const actual2 = deepKeysEqual(objA2, objB2)
+  const expected2 = false
+
+  assert.equal(actual2, expected2,
+    `Given two objects with different keys (in any depth), deepKeysEqual()
+    should return false`)
+
+  /* -------------------- */
+
+  const objA3 = {
+    a: {
+      x: {
+        d: 'd',
+        e: ['e1', 'e2'],
+        f: {
+          g: 'g'
+        }
+      },
+      y: ['y1', 'y2']
+    },
+    b: ['b1', 'b2'],
+    c: 'c'
+  }
+  const objB3 = {
+    b: ['b1', 'b2'],
+    a: {
+      x: {
+        e: ['e1', 'e2'],
+        f: {
+          g: 'Some different value!'
+        },
+        d: 'd'
+      },
+      y: ['y1', 'y2']
+    },
+    c: 'c'
+  }
+  const actual3 = deepKeysEqual(objA3, objB3)
+  const expected3 = true
+
+  assert.equal(actual3, expected3,
+    `Given two objects with same keys (in all depths) but with different
+    values, deepKeysEqual() should return true`)
 
   assert.end()
 })
@@ -204,6 +371,33 @@ test('getUpdatedPageContentFromSchemaChange()', assert => {
     `getUpdatedPageContentFromSchemaChange() should return a pageContent that's
     identical to new schemaObj if the page doesn't already exist`)
 
+  /* -------------------- */
+
+  const currentPageContent3 = {
+    heading: 'Changed heading',
+    list: ['new list', 'item 2'],
+    benefits: {
+      pro: 'Pro benefits',
+      hacker: 'Hacker benefits',
+      anotherAddedKey: 'Something else'
+    }
+  }
+  const newSchemaObj3 = {
+    heading: 'Changed heading',
+    list: ['new list', 'item 2'],
+    benefits: {
+      pro: 'Pro benefits',
+      hacker: 'Hacker benefits',
+      anotherAddedKey: 'Something else'
+    }
+  }
+  const actual3 = getUpdatedPageContentFromSchemaChange(currentPageContent3, newSchemaObj3)
+  const expected3 = null
+
+  assert.deepEqual(actual3, expected3,
+    `getUpdatedPageContentFromSchemaChange() should return null if
+    contentSchema hasn't changed`)
+
   assert.end()
 })
 
@@ -285,6 +479,47 @@ test('getPageContent()', assert => {
   assert.end()
 })
 
+test('replaceContentSchemaValuesWithPlaceholders()', assert => {
+  const contentPlaceholderChar = '-'
+  const contentSchema = {
+    heading: 'Heading',
+    benefits: [
+      {
+        first: 'Benefit 1'
+      },
+      {
+        second: ['Second 1', 'Second 2']
+      },
+    ],
+    sub: {
+      heading: 'Sub heading',
+      list: ['a', 'b', 'c']
+    }
+  }
+  const actual = replaceContentSchemaValuesWithPlaceholders(contentPlaceholderChar, contentSchema)
+  const expected = {
+    heading: '-------',
+    benefits: [
+      {
+        first: '---------'
+      },
+      {
+        second: ['--------', '--------']
+      },
+    ],
+    sub: {
+      heading: '-----------',
+      list: ['-', '-', '-']
+    }
+  }
+
+  assert.deepEqual(actual, expected,
+    `Given contentSchema, replaceContentSchemaValuesWithPlaceholders() should
+    return all values replaced with placeholder character`)
+
+  assert.end()
+})
+
 /* --- IMPURE --------------------------------------------------------------- */
 
 test('updatePageContentOnSchemaChange()', assert => {
@@ -292,7 +527,6 @@ test('updatePageContentOnSchemaChange()', assert => {
     getItem(key) { return },
     setItem(key, value) { return }
   }
-  const currentDomain = 'cmscubed-test.com'
   const route = '/products'
   const rootContent = {
     '/': {
@@ -306,7 +540,7 @@ test('updatePageContentOnSchemaChange()', assert => {
     heading: 'Products heading',
     text: 'Products text'
   }
-  const actual = updatePageContentOnSchemaChange(localStorageMock, currentDomain, route, rootContent, schemaObj)
+  const actual = updatePageContentOnSchemaChange(localStorageMock, route, rootContent, schemaObj)
   const expected = true
 
   assert.equal(actual, expected,
@@ -327,12 +561,13 @@ test('updatePageContentOnSchemaChange()', assert => {
   const schemaObj2 = {
     heading: 'Products heading'
   }
-  const actual2 = updatePageContentOnSchemaChange(localStorageMock, currentDomain, route2, rootContent2, schemaObj2)
+  const actual2 = updatePageContentOnSchemaChange(localStorageMock, route2, rootContent2, schemaObj2)
   const expected2 = false
 
   assert.equal(actual2, expected2,
     `If schemaObj and pageContent are identical (not the same object, but
-    same attributes and values), sendPageContent() should return false`)
+    same attributes and values), updatePageContentOnSchemaChange() should
+    return false`)
 
   /* -------------------- */
 
@@ -341,7 +576,7 @@ test('updatePageContentOnSchemaChange()', assert => {
   const schemaObj3 = {
     heading: 'Products heading'
   }
-  const actual3 = updatePageContentOnSchemaChange(localStorageMock, currentDomain, route3, rootContent3, schemaObj3)
+  const actual3 = updatePageContentOnSchemaChange(localStorageMock, route3, rootContent3, schemaObj3)
   const expected3 = false
 
   assert.equal(actual3, expected3,

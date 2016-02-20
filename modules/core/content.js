@@ -7,9 +7,9 @@ import {sanitizeRoute} from '../client/core'
 const log = x => { console.log(x); return x }
 
 // sanitizeDomain :: String -> String
-export const sanitizeDomain = R.curry(domain => {
-  const parsedDomain = parseDomain(domain)
-  return R.compose(R.join('.'), R.reject(R.isEmpty))([parsedDomain.subdomain, parsedDomain.domain, parsedDomain.tld])
+export const sanitizeDomain = R.curry(inputDomain => {
+  const {subdomain, domain, tld} = parseDomain(inputDomain)
+  return R.compose(R.join('.'), R.reject(R.either(R.isNil, R.isEmpty)))([subdomain, domain, tld])
 })
 
 // convertRouteToPathArray :: String -> [String]
@@ -60,9 +60,11 @@ export const isValidLocale = R.curry(locale => R.indexOf(locale, locales.valid) 
 
 // convertDBContentObjsToContent :: String -> {*} -> {*}
 export const convertDBContentObjsToContent = R.curry(dbContentObjs => {
+  if (R.isEmpty(dbContentObjs)) { return {} }
+
   const content = dbContentObjs.reduce((prev, dbContentObj) => {
     return R.assoc(R.prop('route', dbContentObj), R.prop('content', dbContentObj), prev)
   }, {})
-  console.log('content inside convertDBContentObjsToContent: ', content)
-  return R.isEmpty(content) ? {} : content
+
+  return content
 })
