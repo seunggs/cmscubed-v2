@@ -1,4 +1,4 @@
-import socket from '../websockets/'
+import socket from 'websockets/'
 
 /* --- IMPURE --------------------------------------------------------------- */
 

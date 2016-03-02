@@ -17,7 +17,7 @@ export const io = socketIo(server) // make io available to other modules
 io.on('connection', socket => {
   console.log('User connected')
   socket.emit('connected')
-  socket.emit('routeContent:fromDB', {'/': {}})
+  // socket.emit('routeContent:fromDB', {'/': {}})
 })
 
 // set up express

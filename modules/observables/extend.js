@@ -1,5 +1,5 @@
 import Rx from 'rx-lite'
-import socket from '../websockets/'
+import socket from 'websockets/'
 
 Rx.Observable.prototype.fromSocketIo = eventName => {
   return Rx.Observable.create(observer => {

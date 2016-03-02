@@ -1,9 +1,9 @@
 import React from 'react'
 import {browserHistory} from 'react-router'
 import R from 'ramda'
-import {getIdToken} from '../../../modules/auth/'
-import {addUserProfile$$, getUserProject$$} from '../../../modules/observables/auth'
-import PageLoading from '../../shared/PageLoading'
+import {getIdToken} from 'auth/'
+import {addUserProfile$$, getUserProject$$} from 'observables/auth'
+import PageLoading from 'PageLoading'
 
 /*
   1) Get userToken, save it in localStorage if it doesn't already exist
@@ -31,9 +31,10 @@ const LoggedIn = React.createClass({
         if (!R.isNil(projectDomain)) {
           // first save projectDomain before redirecting
           localStorage.setItem('projectDomain', projectDomain)
-          browserHistory.replace('/edit')
+          console.log('Right before going to /edit')
+          browserHistory.push('/edit')
         } else {
-          browserHistory.replace('/setup')
+          browserHistory.push('/setup')
         }
       }, err => {
         console.log('Something went wrong while running addUserProfile$$ and getUserProject$$: ', err)

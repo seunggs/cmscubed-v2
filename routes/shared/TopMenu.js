@@ -1,9 +1,9 @@
 import React from 'react'
 import R from 'ramda'
 import OnOff from './OnOff'
-import {createStateIds} from '../../modules/core/state'
-import {ENV_ID, LOCALE_ID} from '../../modules/constants/global-states'
-import LocaleSelection from './LocaleSelection'
+import {createStateIds} from 'core/state'
+import {ENV_ID, LOCALE_ID} from 'constants/global-states'
+import LocaleSelection from 'LocaleSelection'
 
 const TopMenu = ({rootState}) => {
   return (

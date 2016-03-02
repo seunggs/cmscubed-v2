@@ -73,7 +73,8 @@ module.exports = {
   },
 	resolve: {
     modulesDirectories: ['node_modules', 'bower_components'],
-    extensions: ['', '.js', '.json']
+    extensions: ['', '.js', '.json'],
+    root: [path.resolve('./modules'), path.resolve('./routes/shared')]
   },
   plugins: [definePlugin, fetchPlugin]
 }

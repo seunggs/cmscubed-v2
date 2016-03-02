@@ -11,6 +11,7 @@ NAMING CONVENTIONS
 * dbBackupObj: an object of mostly meta data inside DB for a changed route (for backup/undo purposes)
 * dbContentObj: entry obj in contents table (i.e. {project: 'Project', locale: 'en-US', route: '/', content: {heading: "Home"}})
 * contentInitObj: {projectDetails, env, isPreview, requestRouteContent} sent from the server on initial content request (for the client)
+* contentFieldObj: {projectRoute, keyPathArray, fieldValue}
 
 
 DATA FLOW
@@ -33,8 +34,9 @@ CLIENT-SIDE DOCUMENTATION
 -------------------------
 FOR USER:
 1) On entry file, call getRootContent(projectDomain, route, {excluded routes:[], contentPlaceholder:true}) - returns on observable
-   NOTE: projectDomain here is not technically required, but added for optimized DB query with secondary index rather than a lot of filtering since performance here is critical
+   NOTE TO SELF: projectDomain here is not technically required, but added for optimized DB query with secondary index rather than a lot of filtering since performance here is critical
 2) Set schemaObj (optionally, set typesObj) - waits for rootContent & projectDetails in localStorage
+   NOTE: DO NOT use special characters ($, #) or integer only (i.e. 0, 1, 15 - '15a' is fine) for schemaObj keys
 3) Run getContent()
 
 FOR ME:
@@ -48,16 +50,18 @@ FOR ME:
 4b) If contentSchema !== rootContent
   1) Send out the new contentUpdateObj
   2) Use the new contentUpdateObj to show content immediately (i.e. optimistic update)
-  * NOTE: Make sure to put setContentSchema above getPageContent
+     NOTE: Make sure to put setContentSchema above getPageContent
   3) OPTIONAL: update the content JSON with the new contentUpdateObj - so that next time, it can be called locally
 
-+) If PREVIEW (i.e. current domain matches one of the preview domains):
-  1) POST call and if PREVIEW, set PREVIEW=true in localStorage
-  2) load socket.io client
-  3) Instead of doing a GET for getRootContent(), emit a socket.io event and receive it too
-  4) Receive field update events and update the content real-time
-  5) Use mutation observer to highlight the part that's being edited
++) If PREVIEW:
+  1) POST call and if PREVIEW, set isPreview = true in localStorage
+  2) Load socket.io client
+  3) Receive field update events and update the content real-time
+  4) Use mutation observer to highlight the part that's being edited
 
++) Array Objectification Strategy:
+  1) For everything, objectify all arrays (['a', 'b'] -> {0: 'a', 1: 'b'})
+  2) Only when the USER gets the pageContent (i.e. getContent() in /client/core), return deobjectified arrays in content
 
 OTHER NOTES
 -----------

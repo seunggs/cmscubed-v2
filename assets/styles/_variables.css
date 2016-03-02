@@ -18,21 +18,23 @@
   --button-padding-left: 1.1rem;
   --button-background-color: var(--ocean);
 
-  --c3-form-field-font-size: 1rem;
+  --c3-form-field-font-size: 0.95rem;
   --c3-form-field-height: 2.65rem;
-  --c3-form-field-padding-y: .65rem;
-  --c3-form-field-padding-x: .65rem;
-  --c3-form-label-font-size: 1rem;
+  --c3-form-field-padding-y: .35rem;
+  --c3-form-field-padding-x: 0;
+  --c3-form-label-font-size: 0.95rem;
   --c3-form-label-font-color: var(--gray);
   --c3-form-label-active-font-size: 0.75rem;
   --c3-form-label-active-font-color: var(--purplish);
-  --c3-editor-field-padding-top: .55rem;
-  --c3-editor-field-padding-bottom: .45rem;
-  --c3-editor-field-padding-right: .65rem;
-  --c3-editor-field-padding-left: .65rem;
+  --c3-editor-field-padding-top: .2rem;
+  --c3-editor-field-padding-bottom: .35rem;
+  --c3-editor-field-padding-right: 0;
+  --c3-editor-field-padding-left: 0;
+  --c3-select-form-field-padding-y: 0.65rem;
+  --c3-select-form-field-padding-x: 0.65rem;
 
   --border-width: 1px;
-  --border-radius: 3px;
+  --border-radius: 0;
   --border-color: var(--darken-2);
   --border-active-width: 2px;
 
@@ -66,6 +68,7 @@
   /* Custom */
   --purplish: #5264AE;
   --before-midnight: #252e37;
+  --right-before-midnight: #20272e;
   --midnight: #1c2228;
 
   --darken-1: rgba(0,0,0,.0625);

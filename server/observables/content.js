@@ -11,10 +11,15 @@ export const receiveRouteContentRequest$ = Rx.Observable.create(observer => {
     io.on('connection', socket => {
       socket.on('routeContent:get', ({projectDomain, env, locale, route}) => {
         console.log('routeContent:get received!', projectDomain, env, locale, route)
-        getRouteContentFromDB$$(projectDomain, env, locale, route).subscribe(
-          routeContent => observer.onNext(routeContent),
-          err => observer.onError(err)
-        )
+        if (!R.isNil(projectDomain) && !R.isNil(env) && !R.isNil(locale)) {
+          getRouteContentFromDB$$(projectDomain, env, locale, route).subscribe(
+            routeContent => observer.onNext(routeContent),
+            err => observer.onError(err)
+          )
+        } else {
+          // For initial request (before projectDomain, env, locale is available)
+          observer.onNext({'/': {}})
+        }
       })
     })
   }
@@ -39,22 +44,22 @@ export const receiveRouteContentRequest$ = Rx.Observable.create(observer => {
 //   }
 // })
 //
-// // This is for realtime update of the content for preview only
-// // As such, it doesn't need to hit DB
-// export const pageFieldUpdate$ = Rx.Observable.create(observer => {
-//   let cancelled = false
-//   if (!cancelled) {
-//     io.on('connection', socket => {
-//       socket.on('pageContentField:update', data => {
-//         observer.onNext(data)
-//       })
-//     })
-//   }
-//   return () => {
-//     cancelled = true
-//     console.log('Disposed')
-//   }
-// })
+// This is for realtime update of the content for preview only
+// As such, it doesn't need to hit DB
+export const contentFieldUpdate$ = Rx.Observable.create(observer => {
+  let cancelled = false
+  if (!cancelled) {
+    io.on('connection', socket => {
+      socket.on('contentField:update', data => {
+        observer.onNext(data)
+      })
+    })
+  }
+  return () => {
+    cancelled = true
+    console.log('Disposed')
+  }
+})
 //
 // export const contentChangesFromDB$ = Rx.Observable.create(observer => {
 //   let cancelled = false

@@ -1,28 +1,46 @@
 import Rx from 'rx-lite'
 import R from 'ramda'
 import config from '../../client-config'
-import {createPreviewDomain, sanitizeDomain} from '../core/content'
+import {createPreviewDomain, sanitizeDomain} from 'core/content'
 
 export const onBlur$$ = thisElem => {
   return Rx.Observable.fromEvent(thisElem, 'blur')
 }
 
-export const sendContentFieldFromEditor$$ = thisElem => {
+// TODO: only update on key press not arrow keys
+export const sendContentField$$ = thisElem => {
   return Rx.Observable.fromEvent(thisElem, 'keyup')
     .map(e => e.target.innerHTML)
-    .debounce(200)
+    .distinctUntilChanged()
+    // .debounce(200)
+}
+
+export const checkPreviewIsReady$$ = projectUrl => {
+  return Rx.Observable.fromEvent(global, 'message')
+    .map(e => {
+      if (e.origin !== 'http://' + projectUrl && e.origin !== 'http://127.0.0.1:4000') { return null }
+      if (e.data !== 'previewPage:ready') { return null }
+      console.log('previewPage:ready event received!')
+      return e
+    })
+}
+
+export const checkSocketIoLoadedInPreview$$ = projectUrl => {
+  return Rx.Observable.fromEvent(global, 'message')
+    .map(e => {
+      if (e.origin !== 'http://' + projectUrl && e.origin !== 'http://127.0.0.1:4000') { return null }
+      if (e.data !== 'socketio:loaded') { return null }
+      console.log('socketio:loaded event received!')
+      return e
+    })
 }
 
 export const addNewProject$$ = formValues => {
   return Rx.Observable.create(observer => {
     let cancelled = false
     const {prodDomain, stagingDomain, localDomain, locale, email, project} = formValues
-    console.log('prodDomain: ', prodDomain)
     const sanitizedProdDomain = sanitizeDomain(prodDomain)
-    console.log('sanitizedProdDomain: ', sanitizedProdDomain)
     const sanitizedStagingDomain = sanitizeDomain(stagingDomain)
-    const previewProdDomain = createPreviewDomain(sanitizedProdDomain, 'prod', locale)
-    const previewStagingDomain = createPreviewDomain(sanitizedProdDomain, 'staging', locale)
 
     if (!cancelled) {
       console.log('Inside createNewProject$')
@@ -35,8 +53,6 @@ export const addNewProject$$ = formValues => {
         },
         prodDomains: [sanitizedProdDomain],
         stagingDomains: [sanitizedStagingDomain],
-        previewProdDomains: [previewProdDomain],
-        previewStagingDomains: [previewStagingDomain],
         users: {
           superadmin: [email]
         },
@@ -44,9 +60,7 @@ export const addNewProject$$ = formValues => {
         localeMap: {
           [locale]: {
             prodDomain: sanitizedProdDomain,
-            stagingDomain: sanitizedStagingDomain,
-            previewProdDomain: previewProdDomain,
-            previewStagingDomain: previewStagingDomain
+            stagingDomain: sanitizedStagingDomain
           }
         }
       }
@@ -79,11 +93,9 @@ export const addProjectToUser$$ = (formValues) => {
     let cancelled = false
 
     if (!cancelled) {
-      console.log('Inside addProjectToUser$')
       const encodedEmail = encodeURIComponent(formValues.email)
       const sanitizedProdDomain = sanitizeDomain(formValues.prodDomain)
       const userUpdateObj = {projectDomain: sanitizedProdDomain}
-      console.log('userUpdateObj: ', userUpdateObj)
 
       fetch(config.apiBase + '/api/users/' + encodedEmail, {
         method: 'put',

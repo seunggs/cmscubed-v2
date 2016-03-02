@@ -5,14 +5,15 @@ import './assets/styles/main.css'
 import Rx from 'rx-lite'
 import R from 'ramda'
 import Auth0Lock from 'auth0-lock'
-import {setIdToken, getIdToken, requireAuth} from './modules/auth/'
-import {setProjectDetails} from './modules/core/state'
-import socket from './modules/websockets/'
+import {setIdToken, getIdToken, requireAuth} from 'auth/'
+import {setProjectDetails} from 'core/state'
+import socket from 'websockets/'
+import {requestRouteContent} from 'websockets/'
 
-import {content$} from './modules/observables/content'
-import {state$} from './modules/observables/state'
-import {isContent} from './modules/core/content'
-import {sendStateChangeEvent} from './modules/events/state'
+import {content$} from 'observables/content'
+import {state$} from 'observables/state'
+import {isContent} from 'core/content'
+import {sendStateChangeEvent} from 'events/state'
 
 import App from './routes/App/'
 import Login from './routes/App/Login/'
@@ -25,7 +26,10 @@ import Dashboard from './routes/App/Main/Edit/Dashboard/'
 import EditPage from './routes/App/Main/Edit/EditPage/'
 
 // combine content$ and states$
-const app$ = Rx.Observable.combineLatest(content$, state$)
+const app$ = Rx.Observable.combineLatest(
+  content$,
+  state$
+)
 
 const routes = (
   <Route path="/" component={App}>
@@ -57,7 +61,8 @@ app$.subscribe(change => {
   ), document.getElementById('app'))
 })
 
-// initialize state
+// initialize content and state
+requestRouteContent({})
 sendStateChangeEvent('global', {})
 
 // CustomEvents polyfill for IE

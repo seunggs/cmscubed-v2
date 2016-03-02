@@ -2,7 +2,7 @@ import {io} from '../../server'
 import {
   receiveRouteContentRequest$,
   // contentUpdate$,
-  // pageFieldUpdate$,
+  contentFieldUpdate$,
   // contentChangesFromDB$,
   // contentGetInit$
 } from '../observables/content'
@@ -50,10 +50,10 @@ export default () => {
   //     })
   // })
   //
-  // pageFieldUpdate$.subscribe(data => {
-  //   io.emit('pageContentField:updateFromServer', data)
-  // // })
-  //
+  contentFieldUpdate$.subscribe(data => {
+    io.emit('contentField:updateFromServer', data)
+  })
+
   // contentChangesFromDB$.subscribe(dbContentObjs => {
   //   const content = convertDBContentObjsToContent(dbContentObjs)
   //   io.emit('routeContent:fromDB', content)

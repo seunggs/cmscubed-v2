@@ -1,8 +1,7 @@
 import Rx from 'rx-lite'
-import socket from '../websockets/'
+import socket from 'websockets/'
 import R from 'ramda'
 import config from '../../client-config'
-import {createEncodedQueryStr} from '../client/core'
 
 /*
   STRATEGY:

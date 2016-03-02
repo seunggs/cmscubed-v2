@@ -2,9 +2,27 @@ import R from 'ramda'
 import socket from '../websockets/'
 import locales from './data/locales'
 import parseDomain from 'parse-domain'
-import {sanitizeRoute} from '../client/core'
+import {convertCamelCaseToTitleCase} from '../utils/'
 
 const log = x => { console.log(x); return x }
+
+// getCurrentDomain :: {*} -> String
+export const getCurrentDomain = (locationObj) => {
+  return locationObj.hostname + (locationObj.port ? ':' + locationObj.port : '')
+}
+
+// checkIsLocalEnv :: {*} -> Boolean
+export const checkIsLocalEnv = (currentDomain) => {
+  return currentDomain.indexOf(':') !== -1
+}
+
+// sanitizeRoute :: String -> String
+export const sanitizeRoute = R.curry(route => {
+  if (R.last(route) === '/') {
+    return R.equals('/', route) ? '/' : R.init(route)
+  }
+  return route
+})
 
 // sanitizeDomain :: String -> String
 export const sanitizeDomain = R.curry(inputDomain => {
@@ -15,15 +33,9 @@ export const sanitizeDomain = R.curry(inputDomain => {
 // convertRouteToPathArray :: String -> [String]
 export const convertRouteToPathArray = R.compose(R.reject(R.isEmpty), R.split('/'))
 
-// createPreviewDomain :: String -> String
-export const createPreviewDomain = R.curry((prodDomain, env, locale) => {
-  const {subdomain, domain} = parseDomain(prodDomain)
-  return R.isEmpty(subdomain) ? `c3-${domain}-preview-${env}-${locale}.surge.sh` : `c3-${subdomain}-${domain}-preview-${env}-${locale}.surge.sh`
-})
-
 // getProjectRoute :: String -> String
-export const getProjectRoute = route => {
-  return route.replace('/edit', '') === '/$root' ? '/' : route.replace('/edit', '')
+export const getProjectRoute = params => {
+  return params === '$root' ? '/' : '/' + params.replace(/\$\$/g, '/')
 }
 
 // getPageContent :: String -> {*} -> {*}
@@ -48,11 +60,14 @@ export const createRouteTree = R.curry(rootContent => {
   })
   const nestedRootContent = createNestedRoutes(rootContent)
 
-  const getChildRoutes = R.curry(obj => {
+  const getChildRoutes = R.curry((prevRoute, obj) => {
     const childRoutes = R.keys(obj)
-    return childRoutes.map(key => ({path: key, childRoutes: getChildRoutes(obj[key])}))
+    return childRoutes.map(key => {
+      const route = prevRoute + '/' + key
+      return {path: key, route: route, childRoutes: getChildRoutes(route, obj[key])}
+    })
   })
-  return [{ path: '/', childRoutes: getChildRoutes(nestedRootContent)}]
+  return [{ path: '/', route: '/', childRoutes: getChildRoutes('', nestedRootContent)}]
 })
 
 // isValidLocale :: [*] -> String -> Boolean
@@ -68,3 +83,31 @@ export const convertDBContentObjsToContent = R.curry(dbContentObjs => {
 
   return content
 })
+
+// convertPageContentToContentFields :: {*} -> {*}
+export const convertPageContentToContentFields = R.curry(pageContent => {
+  const flattenObjWithKeyConnector = (keyConnector, objKey, obj) => {
+    const keys = R.keys(obj)
+    const flattenedObj = keys.reduce((prev, curr) => {
+      const val = obj[curr]
+      // If the value is an obj
+      if (R.is(Object, val)) {
+        return R.merge(prev, flattenObjWithKeyConnector(keyConnector, objKey + (R.equals(objKey, '') ? '' : keyConnector) + curr, val))
+      } else {
+        // Only add a keyConnector on depth > 1
+        return R.merge(prev, {[objKey + (R.equals(objKey, '') ? '' : keyConnector) + curr]: val})
+      }
+    }, {})
+    return flattenedObj
+  }
+  return flattenObjWithKeyConnector('$', '', pageContent)
+})
+
+// convertFieldKeyToTitleCase :: String -> String
+export const convertFieldKeyToTitleCase = R.compose(R.join(' '), R.map(convertCamelCaseToTitleCase), R.split('$'))
+
+// // getContentFieldKeys :: {*} -> {*}
+// const getContentFieldKeys = R.curry(contentFieldObj => {
+//   const keys = R.keys(contentFieldObj)
+//   return keys.reduce((prev, key) => R.merge(prev, {[key]: R.replace(/\$/g, '.', key)}), {})
+// })

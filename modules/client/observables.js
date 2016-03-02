@@ -30,23 +30,61 @@ export const getInitContent$$ = (projectDomain, domain, route, excludedRoutes) =
   })
 }
 
-export const getUpdatedContentWS$$ = socket => {
+export const checkIsPreview$ = Rx.Observable.fromEvent(global, 'message')
+  .map(e => {
+    console.log('checkIsPreview$ e: ', e)
+    if (e.origin !== 'https://cmscubed.com' && e.origin !== 'http://127.0.0.1:3333') { return null }
+    if (e.data !== 'isPreview') { return null }
+    return e
+  })
+
+export const getUpdatedRouteContentWS$$ = socket => {
   return Rx.Observable.create(observer => {
     let cancelled = false
 
     if (!cancelled) {
-      // TODO: add contentField:update event listener as well and return routeContent from it
       socket.on('routeContent:fromDB', routeContent => {
+        console.log('getUpdatedRouteContentWS$$ routeContent received!')
         observer.onNext(routeContent)
       })
     }
 
     return () => {
       cancelled = true
-      console.log('getInitContent$$ disposed')
+      console.log('getUpdatedRouteContentWS$$ disposed')
     }
   })
 }
+
+export const getUpdatedContentFieldWS$$ = socket => {
+  return Rx.Observable.create(observer => {
+    let cancelled = false
+
+    if (!cancelled) {
+      socket.on('contentField:updateFromServer', fieldObj => {
+        console.log('Content field update received!!!')
+        // fieldObj: {projectRoute, keyPath, value}
+        observer.onNext(fieldObj)
+      })
+    }
+
+    return () => {
+      cancelled = true
+      console.log('getUpdatedContentFieldWS$$ disposed')
+    }
+  })
+}
+
+// export const getUpdatedContentWS$$ = socket => {
+//   return Rx.Observable.combineLatest(
+//     getUpdatedRouteContentWS$$(socket),
+//     getUpdatedContentFieldWS$$(socket)
+//   ).map(change => {
+//     const routeContent = change[0]
+//     const field = change[1]
+//     return R.assocPath(R.prepend(field.projectRoute, field.keyPath), field.value, routeContent)
+//   })
+// }
 
 // updatePageContent$$ :: {*} -> {*}
 export const updatePageContent$$ = contentUpdateObj => {
@@ -67,6 +105,29 @@ export const updatePageContent$$ = contentUpdateObj => {
       .catch(err => observer.onError())
   })
 }
+
+// loadSocketIoClient$
+export const loadSocketIoClient$ = Rx.Observable.create(observer => {
+  let cancelled = false
+
+  if (!cancelled) {
+    if (R.isNil(global.io)) {
+      const scriptElem = document.createElement('script')
+      scriptElem.setAttribute('type','text/javascript')
+      scriptElem.setAttribute('src', 'https://cdn.socket.io/socket.io-1.4.5.js')
+      document.body.appendChild(scriptElem)
+      scriptElem.onload = () => {
+        observer.onNext()
+        observer.onCompleted()
+      }
+    }
+  }
+
+  return () => {
+    cancelled = true
+    console.log('loadSocketIoClient$ disposed')
+  }
+})
 
 // // getRouteContent$$ :: {*} -> String -> String -> String -> Observable
 // export const getRouteContent$$ = (projectDomain, env, locale, route) => {

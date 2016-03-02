@@ -1,6 +1,7 @@
 .c3-field {
+  font-size: var(--c3-form-field-font-size);
   outline: none;
-  border-style: solid;
+  border-style: none none solid none;
   border-width: var(--border-width);
   border-color: var(--border-color);
   border-radius: var(--border-radius);
@@ -11,7 +12,7 @@
   outline: none;
   border-color: var(--c3-field-focus-color);
   border-width: var(--border-width);
-  box-shadow: 0 0 0 1px var(--c3-field-focus-color);
+  box-shadow: 0 1px 0 0 var(--c3-field-focus-color);
   transition: 0.2s ease all;
 }
 

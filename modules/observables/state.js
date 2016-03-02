@@ -1,7 +1,7 @@
 import Rx from 'rx-lite'
 import R from 'ramda'
-import {ENV_ID, LOCALE_ID} from '../constants/global-states'
-import {requestRouteContent} from '../websockets/'
+import {ENV_ID, LOCALE_ID} from 'constants/global-states'
+import {requestRouteContent} from 'websockets/'
 
 /*
   STRATEGY:

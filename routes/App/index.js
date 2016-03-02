@@ -1,5 +1,5 @@
 import React from 'react'
-import RouteTransition from '../shared/RouteTransition'
+import RouteTransition from 'RouteTransition'
 
 const App = ({children, location}) => {
   return (

@@ -1,10 +1,10 @@
 import React from 'react'
 import R from 'ramda'
 import Rx from 'rx-lite'
-import {sendStateChangeEvent} from '../../modules/events/state'
-import {projectNameAvailable$} from '../../modules/observables/ui'
-import {getElemState} from '../../modules/core/state'
-import C3Error from './C3Error'
+import {sendStateChangeEvent} from 'events/state'
+import {projectNameAvailable$} from 'observables/ui'
+import {getElemState} from 'core/state'
+import C3Error from 'C3Error'
 
 const C3Input = React.createClass({
   getState() {

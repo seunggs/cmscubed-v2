@@ -14,7 +14,7 @@ import {
   getPageContentFromDB$$,
   updatePageContentInDB$$
 } from '../observables/db'
-import {convertEnvToShortEnv, isLocalEnv} from '../../modules/client/core'
+import {convertEnvToShortEnv, checkIsLocalEnv} from '../../modules/client/core'
 import {sanitizeDomain, sanitizeLocalDomain} from '../../modules/core/content'
 
 const router = express.Router()
@@ -180,27 +180,29 @@ router.route('/client/contents/init')
     const {projectDomain, domain, route, excludedRoutes} = decodedQuery
     const excludedRoutesArray = R.isEmpty(excludedRoutes) ? [] : excludedRoutes.split(',')
     const sanitizedProjectDomain = sanitizeDomain(projectDomain)
-    let projectDetailsArrayToReturn, envToReturn, localeToReturn, isPreview
+    let projectDetailsArrayToReturn, envToReturn, localeToReturn
 
     getProjectDetailsBySecondaryIndexFromDB$$('projectDomain', sanitizedProjectDomain)
       .flatMap(projectDetailsArray => {
         if (R.isEmpty(projectDetailsArray)) { return [] }
 
         const projectDetails = R.head(projectDetailsArray)
-        const {projectDomain, localDomain, localMappedTo, defaultLocale, localeMap, contentPlaceholder, prodDomains, stagingDomains, previewProdDomains, previewStagingDomains} = projectDetails
+        // const {projectDomain, localDomain, localMappedTo, defaultLocale, localeMap, contentPlaceholder, prodDomains, stagingDomains, previewProdDomains, previewStagingDomains} = projectDetails
+        const {projectDomain, localDomain, localMappedTo, defaultLocale, localeMap, contentPlaceholder, prodDomains, stagingDomains} = projectDetails
         const {locale: localeInLocal, domain: domainInLocal} = localMappedTo
 
         // TODO: separate out the logic and add tests -> /utils/api-helpers.js
         // First see if env is local; if it is, map it to designated env (defaults to staging)
-        console.log('isLocalEnv? ', isLocalEnv(domain))
-        const sanitizedDomain = isLocalEnv(domain) ? R.path([localeInLocal, domainInLocal], localeMap) : sanitizeDomain(domain)
-        const allDomainGroups = [{prodDomains}, {stagingDomains}, {previewProdDomains}, {previewStagingDomains}]
+        console.log('checkIsLocalEnv? ', checkIsLocalEnv(domain))
+        const sanitizedDomain = checkIsLocalEnv(domain) ? R.path([localeInLocal, domainInLocal], localeMap) : sanitizeDomain(domain)
+        // const allDomainGroups = [{prodDomains}, {stagingDomains}, {previewProdDomains}, {previewStagingDomains}]
+        const allDomainGroups = [{prodDomains}, {stagingDomains}]
         const envDomain = R.init(
           allDomainGroups
             .filter(domainGroupObj => R.compose(R.contains(sanitizedDomain), R.head, R.values)(domainGroupObj))
             .map(domainGroupObj => R.compose(R.head, R.keys)(domainGroupObj))
-            .reduce(R.add, '') // prodDomains, stagingDomains, previewProdDomains, previewStagingDomains
-        ) // prodDomain, stagingDomain, previewProdDomain, previewStagingDomain
+            .reduce(R.add, '') // prodDomains, stagingDomains
+        ) // prodDomain, stagingDomain
         const contentEnv = convertEnvToShortEnv(envDomain) // prod, staging
         const locale = R.compose(R.head, R.reject(R.isEmpty), R.values, R.mapObjIndexed((domains, locale) => domains[envDomain] === sanitizedDomain ? locale : ''))(localeMap)
         console.log('envDomain: ', envDomain)
@@ -211,9 +213,9 @@ router.route('/client/contents/init')
         projectDetailsArrayToReturn = R.clone(projectDetailsArray)
         envToReturn = R.clone(contentEnv)
         localeToReturn = R.clone(locale)
-        isPreview = envDomain.indexOf('preview') !== -1 ? true : false
+        // isPreview = envDomain.indexOf('preview') !== -1 ? true : false
 
-        console.log(projectDetailsArrayToReturn, envToReturn, localeToReturn, isPreview)
+        console.log(projectDetailsArrayToReturn, envToReturn, localeToReturn)
 
         if (R.isEmpty(excludedRoutesArray)) {
           return getRouteContentFromDB$$(projectDomain, contentEnv, locale, route)
@@ -246,7 +248,7 @@ router.route('/client/contents/init')
               projectDetails: R.head(projectDetailsArrayToReturn),
               env: envToReturn,
               locale: localeToReturn,
-              isPreview,
+              // isPreview,
               routeContent
             })
             console.log('contentInitObj: ', contentInitObj)

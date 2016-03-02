@@ -1,9 +1,9 @@
 import React from 'react'
 import {browserHistory} from 'react-router'
 import R from 'ramda'
-import {sendStateChangeEvent} from '../../modules/events/state'
-import {getElemState} from '../../modules/core/state'
-import C3Error from './C3Error'
+import {sendStateChangeEvent} from 'events/state'
+import {getElemState} from 'core/state'
+import C3Error from 'C3Error'
 
 const C3SubmitButton = React.createClass({
   getState() {

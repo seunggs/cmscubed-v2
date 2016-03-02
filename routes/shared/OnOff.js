@@ -1,7 +1,7 @@
 import React from 'react'
 import R from 'ramda'
-import {getElemState} from '../../modules/core/state'
-import {sendStateChangeEvent} from '../../modules/events/state'
+import {getElemState} from 'core/state'
+import {sendStateChangeEvent} from 'events/state'
 import {Motion, spring} from 'react-motion'
 
 const OnOff = React.createClass({

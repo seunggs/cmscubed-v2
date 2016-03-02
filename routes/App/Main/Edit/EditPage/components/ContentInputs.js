@@ -1,24 +1,27 @@
 import React from 'react'
 import R from 'ramda'
-import Editor from '../../../../../shared/Editor'
-import {convertCamelCaseToTitleCase} from '../../../../../../modules/utils/'
+import Editor from 'Editor'
+import {convertPageContentToContentFields, convertFieldKeyToTitleCase} from 'core/content'
 
 const ContentInputs = React.createClass({
-  render() {
+  renderFields() {
     const {projectRoute, pageContent} = this.props
     console.log('projectRoute: ', projectRoute)
     console.log('pageContent: ', pageContent)
-    const fields = R.keys(pageContent)
+    const contentFieldObj = convertPageContentToContentFields(pageContent)
+    const contentFieldKeys = R.keys(contentFieldObj)
 
+    return contentFieldKeys.map((field, index) => {
+      const labelText = convertFieldKeyToTitleCase(field)
+      const fieldId = projectRoute + '-' + field
+      return <Editor id={fieldId} key={index} labelText={labelText} text={contentFieldObj[field]} />
+    })
+  },
+  render() {
+    console.log('ContentInputs rendered')
     return (
-      <div className="col col-3">
-        <div className="p2">
-          {fields.map((field, index) => {
-            const labelText = convertCamelCaseToTitleCase(field)
-            const fieldId = projectRoute + '-' + field
-            return <Editor id={fieldId} key={index} labelText={labelText} text={pageContent[field]} />
-          })}
-        </div>
+      <div className="p2">
+        {this.renderFields()}
       </div>
     )
   }

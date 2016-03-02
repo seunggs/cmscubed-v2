@@ -1,7 +1,7 @@
 import React from 'react'
 import R from 'ramda'
-import {getElemState} from '../../modules/core/state'
-import {sendStateChangeEvent} from '../../modules/events/state'
+import {getElemState} from 'core/state'
+import {sendStateChangeEvent} from 'events/state'
 
 const LocaleSelection = React.createClass({
   getState() {
@@ -28,10 +28,10 @@ const LocaleSelection = React.createClass({
     return (
       <div className="flex flex-center">
         {allAvailableLocales.map((locale, index) => {
-          const baseStyle = {padding: '0.2rem 0.5rem'}
+          const baseStyle = {fontSize: '0.75rem', padding: '0.2rem 0.5rem'}
           const activeStyle = locale === activeLocale ? {color: 'rgba(255,255,255,0.75)', borderColor: 'rgba(255,255,255,0.6)'} : {color: 'rgba(255,255,255,0.4)', borderColor: 'rgba(255,255,255,0.3)'}
           const style = R.merge(baseStyle, activeStyle)
-          return <div key={index} className="ml2 h6 border pill" style={style}>{locale}</div>
+          return <button key={index} className="btn btn-outline-light pill ml2" style={style}>{locale}</button>
         })}
       </div>
     )

@@ -4,7 +4,7 @@
   font-size: var(--c3-form-label-font-size);
   position: absolute;
   pointer-events: none;
-  left: 10px;
+  left: 0;
   top: var(--c3-form-field-padding-y);
   transition: 0.2s ease all;
 }
@@ -12,7 +12,7 @@
 [data-medium-empty="true"][data-medium-focused="true"] ~ .c3-editor-label {
   visibility: visible;
   top: -20px;
-  left: 5px;
+  left: 0;
   font-size: var(--c3-form-label-active-font-size);
   color: var(--c3-form-label-active-font-color);
 }
@@ -22,7 +22,7 @@
   position: absolute;
   pointer-events: none;
   top: -20px;
-  left: 5px;
+  left: 0;
   font-size: var(--c3-form-label-active-font-size);
   color: var(--gray);
   transition: 0.2s ease all;
@@ -32,7 +32,7 @@
   position: absolute;
   pointer-events: none;
   top: -20px;
-  left: 5px;
+  left: 0;
   font-size: var(--c3-form-label-active-font-size);
   color: var(--c3-form-label-active-font-color);
   transition: 0.2s ease all;

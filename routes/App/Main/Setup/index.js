@@ -1,15 +1,15 @@
 import React from 'react'
 import R from 'ramda'
 import {browserHistory} from 'react-router'
-import C3Input from '../../../shared/C3Input'
-import C3Select from '../../../shared/C3Select'
-import C3Option from '../../../shared/C3Option'
-import C3SubmitButton from '../../../shared/C3SubmitButton'
-import C3HiddenInput from '../../../shared/C3HiddenInput'
-import {checkIsNotEmpty, checkIsCamelCased, checkIsDomain, projectDomainIsAvailable$$} from '../../../../modules/validators/'
-import {createStateIds} from '../../../../modules/core/state'
-import {addNewProjectAndAddProjectToUser$$} from '../../../../modules/observables/ui'
-import {getUserProject$$} from '../../../../modules/observables/auth'
+import C3Input from 'C3Input'
+import C3Select from 'C3Select'
+import C3Option from 'C3Option'
+import C3SubmitButton from 'C3SubmitButton'
+import C3HiddenInput from 'C3HiddenInput'
+import {checkIsNotEmpty, checkIsCamelCased, checkIsDomain, projectDomainIsAvailable$$} from 'validators/'
+import {createStateIds} from 'core/state'
+import {addNewProjectAndAddProjectToUser$$} from 'observables/ui'
+import {getUserProject$$} from 'observables/auth'
 
 const Setup = React.createClass({
   // componentWillMount() {
@@ -44,9 +44,9 @@ const Setup = React.createClass({
               <C3Input id={ids[0]} name="project" rootState={rootState} labelText="Project Name" validators={[isRequiredValidator, isCamelCasedValidator]} autoFocus="true" />
               <C3Input id={ids[1]} name="prodDomain" rootState={rootState} labelText="Project Production Domain" validators={[isRequiredValidator, isDomainValidator]} asyncValidator={isAvailableValidator} />
               <C3Input id={ids[2]} name="stagingDomain" rootState={rootState} labelText="Project Staging Domain" validators={[isRequiredValidator, isDomainValidator]} />
-              <C3Select id={ids[3]} name="locale" rootState={rootState} placeholder="Default Locale" validators={[isRequiredValidator]} selected={'en-US'}>
+              {/*<C3Select id={ids[3]} name="locale" rootState={rootState} placeholder="Default Locale" validators={[isRequiredValidator]} selected={'en-US'}>
                 <C3Option value="en-US"></C3Option>
-              </C3Select>
+              </C3Select>*/}
               <C3SubmitButton id={ids[4]} ref="blah" rootState={rootState} nextRoute={'/loggedin'} createSubmitForm$={addNewProjectAndAddProjectToUser$$}>Next &rarr;</C3SubmitButton>
             </form>
           </div>

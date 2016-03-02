@@ -1,6 +1,6 @@
 import React from 'react'
 import {browserHistory} from 'react-router'
-import {loggedIn} from '../../../modules/auth/'
+import {loggedIn} from 'auth/'
 
 const Login = ({lock, history, children}) => {
   if (loggedIn()) {

@@ -18,21 +18,21 @@
   font-size: var(--c3-form-label-font-size);
   position: absolute;
   pointer-events: none;
-  top: var(--c3-form-field-padding-y);
-  left: 10px;
+  top: var(--c3-select-form-field-padding-y);
+  left: 0;
   transition: 0.2s ease all;
 }
 
 [data-c3-select-focused="true"] ~ .c3-select-label {
   top: -20px;
-  left: 5px;
+  left: 0;
   font-size: var(--c3-form-label-active-font-size);
   color: var(--c3-form-label-active-font-color);
 }
 
 [data-c3-select-empty="false"] ~ .c3-select-label {
   top: -20px;
-  left: 5px;
+  left: 0;
   font-size: var(--c3-form-label-active-font-size);
   color: var(--c3-form-label-active-font-color);
 }
@@ -70,12 +70,11 @@
 .c3-option-group {
   position: absolute;
   top: var(--c3-form-field-height);
-  left: -2px;
   margin-top: -2px;
   visibility: hidden;
   opacity: 0;
   background-color: var(--purplish);
-  border-style: solid;
+  border-style: none;
   border-width: var(--border-active-width);
   border-color: var(--c3-field-focus-color);
   border-top-left-radius: 0px;
@@ -94,7 +93,7 @@
 .c3-option {
   color: var(--white);
   height: calc(var(--c3-form-field-height)/2);
-  padding: var(--c3-form-field-padding-y) var(--c3-form-field-padding-x);
+  padding: var(--c3-select-form-field-padding-y) var(--c3-select-form-field-padding-x);
 }
 
 .c3-option:hover {
@@ -103,6 +102,6 @@
 
 .c3-option-selected {
   position: absolute;
-  top: var(--c3-form-field-padding-y);
+  top: var(--c3-select-form-field-padding-y);
   left: 10px;
 }

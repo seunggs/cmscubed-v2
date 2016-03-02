@@ -1,15 +1,94 @@
 import test from 'tape'
 import sinon from 'sinon'
 import {
+  getCurrentDomain,
+  checkIsLocalEnv,
+  sanitizeRoute,
   sanitizeDomain,
   convertRouteToPathArray,
-  createPreviewDomain,
   getPageContent,
   getProjectRoute,
   createRouteTree,
   isValidLocale,
-  convertDBContentObjsToContent
+  convertDBContentObjsToContent,
+  convertPageContentToContentFields,
+  convertFieldKeyToTitleCase
 } from './content'
+
+test('getCurrentDomain()', assert => {
+  const mockLocationObj = {
+    hostname: '127.0.0.1',
+    port: '4000'
+  }
+  const actual = getCurrentDomain(mockLocationObj)
+  const expected = '127.0.0.1:4000'
+
+  assert.equal(actual, expected,
+    `Given a window.location object, getCurrentDomain() should return
+    current domain, including port if any`)
+
+  /* -------------------- */
+
+  const mockLocationObj2 = {
+    hostname: 'www.cmscubed-test.com',
+    port: null
+  }
+  const actual2 = getCurrentDomain(mockLocationObj2)
+  const expected2 = 'www.cmscubed-test.com'
+
+  assert.equal(actual2, expected2,
+    `Given a window.location object, getCurrentDomain() should return
+    current domain, including port if any`)
+
+  assert.end()
+})
+
+test('checkIsLocalEnv()', assert => {
+  const domain = '127.0.0.1:4000'
+  const actual = checkIsLocalEnv(domain)
+  const expected = true
+
+  assert.equal(actual, expected,
+    `Given a domain, checkIsLocalEnv() should return true if domain is local`)
+
+  /* -------------------- */
+
+  const domain2 = 'cmscubed-test.com'
+  const actual2 = checkIsLocalEnv(domain2)
+  const expected2 = false
+
+  assert.equal(actual2, expected2,
+    `Given a domain, checkIsLocalEnv() should return false if domain is not local`)
+
+  assert.end()
+})
+
+test('sanitizeRoute()', assert => {
+  const route = '/products/'
+  const actual = sanitizeRoute(route)
+  const expected = '/products'
+
+  assert.equal(actual, expected,
+    `Given a route string with a trailing slash, sanitizeRoute() should remove
+    the trailing slash`)
+
+  const route2 = '/products'
+  const actual2 = sanitizeRoute(route2)
+  const expected2 = '/products'
+
+  assert.equal(actual2, expected2,
+    `Given a route string with no trailing slash, sanitizeRoute() should do
+    nothing`)
+
+  const route3 = '/'
+  const actual3 = sanitizeRoute(route3)
+  const expected3 = '/'
+
+  assert.equal(actual3, expected3,
+    `Given a root route, sanitizeRoute() should do nothing`)
+
+  assert.end()
+})
 
 test('sanitizeDomain()', assert => {
   const domain = 'http://www.blah.com'
@@ -94,40 +173,24 @@ test('convertRouteToPathArray()', assert => {
   assert.end()
 })
 
-test('createPreviewDomain()', assert => {
-  const domain = 'https://www.blah.com'
-  const env = 'staging'
-  const locale = 'en-US'
-  const actual = createPreviewDomain(domain, env, locale)
-  const expected = 'c3-www-blah-preview-staging-en-US.surge.sh'
-
-  assert.equal(actual, expected,
-    `Given a domain and env, createPreviewDomain() should return a preview
-    url consisting of prefix, subdomain, domain, and env`)
-
-  /* -------------------- */
-
-  const domain2 = 'blah.com'
-  const env2 = 'staging'
-  const locale2 = 'en-US'
-  const actual2 = createPreviewDomain(domain2, env2, locale2)
-  const expected2 = 'c3-blah-preview-staging-en-US.surge.sh'
-
-  assert.equal(actual2, expected2,
-    `Given a domain without subdomain and env, createPreviewDomain() should
-    return a preview url consisting of prefix, subdomain, domain, and env`)
-
-  assert.end()
-})
-
 test('getProjectRoute()', assert => {
-  const route = '/edit/project/route'
+  const route = 'project$$route'
   const actual = getProjectRoute(route)
   const expected = '/project/route'
 
   assert.equal(actual, expected,
-    `Given cmscubed website route, getProjectRoute() should return the project
-    route`)
+    `Given cmscubed website route with double $, getProjectRoute() should
+    return the project route`)
+
+  /* -------------------- */
+
+  const route2 = '$root'
+  const actual2 = getProjectRoute(route2)
+  const expected2 = '/'
+
+  assert.equal(actual2, expected2,
+    `Given a root route (/$root), getProjectRoute() should return the project
+    root route`)
 
   assert.end()
 })
@@ -208,19 +271,24 @@ test('createRouteTree()', assert => {
   const expected = [
     {
       path: '/',
+      route: '/',
       childRoutes: [
         {
           path: 'products',
+          route: '/products',
           childRoutes: [
             {
               path: 'hacker',
+              route: '/products/hacker',
               childRoutes: []
             },
             {
               path: 'pro',
+              route: '/products/pro',
               childRoutes: [
                 {
                   path: 'overview',
+                  route: '/products/pro/overview',
                   childRoutes: []
                 }
               ]
@@ -229,13 +297,16 @@ test('createRouteTree()', assert => {
         },
         {
           path: 'about',
+          route: '/about',
           childRoutes: []
         },
         {
           path: 'faq',
+          route: '/faq',
           childRoutes: [
             {
               path: 'intro',
+              route: '/faq/intro',
               childRoutes: []
             }
           ]
@@ -267,20 +338,25 @@ test('createRouteTree()', assert => {
   const expected2 = [
     {
       path: '/',
+      route: '/',
       childRoutes: [
         {
           path: 'about',
+          route: '/about',
           childRoutes: []
         },
         {
           path: 'products',
+          route: '/products',
           childRoutes: [
             {
               path: 'hacker',
+              route: '/products/hacker',
               childRoutes: []
             },
             {
               path: 'pro',
+              route: '/products/pro',
               childRoutes: []
             }
           ]
@@ -370,6 +446,65 @@ test('convertDBContentObjsToContent()', assert => {
   assert.deepEqual(actual2, expected2,
     `Given an empty dbContentObj array from DB, convertDBContentObjsToContent()
     should return an empty object`)
+
+  assert.end()
+})
+
+test('convertPageContentToContentFields()', assert => {
+  const pageContent = {
+    heading: 'Heading',
+    text: 'Text',
+    list: [
+      'item 1',
+      {item2: 'item 2'}
+    ],
+    subContent: {
+      heading: 'Sub Heading',
+      text: 'Sub Text',
+      sublist: [
+        'item 1',
+        {item2: 'item 2'}
+      ]
+    }
+  }
+  const actual = convertPageContentToContentFields(pageContent)
+  const expected = {
+    heading: 'Heading',
+    text: 'Text',
+    list$0: 'item 1',
+    list$1$item2: 'item 2',
+    subContent$heading: 'Sub Heading',
+    subContent$text: 'Sub Text',
+    subContent$sublist$0: 'item 1',
+    subContent$sublist$1$item2: 'item 2'
+  }
+
+  assert.deepEqual(actual, expected,
+    `Given a pageContent object, convertPageContentToContentFields() should
+    return a contentFields object that can be used to render the fields as
+    editor forms to users`)
+
+  /* -------------------- */
+
+  const pageContent2 = {}
+  const actual2 = convertPageContentToContentFields(pageContent2)
+  const expected2 = {}
+
+  assert.deepEqual(actual2, expected2,
+    `Given an empty pageContent object, convertPageContentToContentFields()
+    should return an empty object`)
+
+  assert.end()
+})
+
+test('convertFieldKeyToTitleCase()', assert => {
+  const input = 'someCamelCasedString$anotherCamelCasedString'
+  const actual = convertFieldKeyToTitleCase(input)
+  const expected = 'Some Camel Cased String Another Camel Cased String'
+
+  assert.equal(actual, expected,
+    `Given a fieldKey with camelCase and dollarCase,
+    convertFieldKeyToTitleCase() should return a title cased string`)
 
   assert.end()
 })

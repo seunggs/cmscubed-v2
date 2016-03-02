@@ -1,17 +1,26 @@
 import R from 'ramda'
 import Rx from 'rx-lite'
-import {updatePageContent$$, getInitContent$$, getUpdatedContentWS$$} from './observables'
+import config from './config'
+import {
+  updatePageContent$$,
+  getInitContent$$,
+  getUpdatedRouteContentWS$$,
+  getUpdatedContentFieldWS$$,
+  checkIsPreview$,
+  loadSocketIoClient$
+} from './observables'
 
 /* --- PURE ----------------------------------------------------------------- */
 
 const log = x => { console.log(x); return x }
 
+// getCurrentDomain :: {*} -> String
 export const getCurrentDomain = (locationObj) => {
   return locationObj.hostname + (locationObj.port ? ':' + locationObj.port : '')
 }
 
-// isLocalEnv :: () -> Boolean
-export const isLocalEnv = (currentDomain) => {
+// checkIsLocalEnv :: {*} -> Boolean
+export const checkIsLocalEnv = (currentDomain) => {
   return currentDomain.indexOf(':') !== -1
 }
 
@@ -24,7 +33,8 @@ export const sanitizeRoute = R.curry(route => {
 })
 
 // convertEnvToShortEnv :: String -> String
-export const convertEnvToShortEnv = R.compose(R.toLower, R.replace('Domain', ''), R.replace('preview', ''))
+// export const convertEnvToShortEnv = R.compose(R.toLower, R.replace('Domain', ''), R.replace('preview', ''))
+export const convertEnvToShortEnv = R.compose(R.toLower, R.replace('Domain', ''))
 
 // createEncodedQueryStr :: [{*}] -> String
 export const createEncodedQueryStr = R.curry(queryObjsArray => {
@@ -34,42 +44,153 @@ export const createEncodedQueryStr = R.curry(queryObjsArray => {
   }, ''))
 })
 
+// checkIsInteger :: * -> Boolean
+export const checkIsInteger = R.curry(value => {
+  if (isNaN(value)) { return false }
+  var x = parseFloat(value)
+  return (x | 0) === x
+})
+
+// checkIsObjectifiedArray :: {*} -> Boolean
+export const checkIsObjectifiedArray = R.curry(obj => {
+  if (!R.is(Object, obj) || R.isArrayLike(obj)) { return false }
+  const keys = R.keys(obj)
+  return R.compose(R.isEmpty, R.reject(checkIsInteger))(keys)
+})
+
+// // deepKeysEqual :: {*} -> {*} -> {*}
+// export const deepKeysEqual = R.curry((obj1, obj2) => {
+//   const keysEqual = (objA, objB) => {
+//     // First see which obj has more keys (otherwise, comparison would not be complete)
+//     const objWithMoreKeys = R.keys(objA).length >= R.keys(objB).length ? objA : objB
+//     const objWithLessKeys = R.keys(objA).length < R.keys(objB).length ? objA : objB
+//     return R.keys(objWithMoreKeys).reduce((prev, key) => {
+//       const sameKeyExistsInTheOtherObj = !R.isNil(R.prop(key, objWithLessKeys))
+//       if (sameKeyExistsInTheOtherObj) {
+//         const bothValuesAreObjs = R.is(Object, objA[key]) && R.is(Object, objB[key])
+//         if (bothValuesAreObjs) {
+//           const onlyOneValueIsAnArray = (R.isArrayLike(objA[key]) && !R.isArrayLike(objB[key])) || (!R.isArrayLike(objA[key]) && R.isArrayLike(objB[key]))
+//           if (onlyOneValueIsAnArray) {
+//             return R.append(false, prev)
+//           }
+//           return R.concat(keysEqual(objA[key], objB[key]), prev)
+//         } else {
+//           return R.append(true, prev)
+//         }
+//       } else {
+//         return R.append(false, prev)
+//       }
+//     }, [])
+//   }
+//   return R.isEmpty(keysEqual(obj1, obj2).filter(entry => entry === false))
+// })
+
+// TODO: add test
+// checkIsArray :: * -> Boolean
+export const checkIsArray = R.either(R.isArrayLike, checkIsObjectifiedArray)
+
+// checkIsObjButNotArray :: * -> Boolean
+export const checkIsObjButNotArray = R.both(R.is(Object), R.complement(checkIsArray))
+
+// checkIsPrimitive :: * -> Boolean
+export const checkIsPrimitive = R.complement(R.is(Object))
+
+// checkContainsArray :: * -> Boolean
+export const checkContainsArray = R.curry(input => {
+  if (checkIsPrimitive(input)) { return false }
+  if (checkIsArray(input)) { return true }
+  const keys = R.keys(input)
+  const listOfTOrF = keys.reduce((prev, curr) => {
+    const val = input[curr]
+    if (checkIsPrimitive(val)) {
+      return R.append(false, prev)
+    } else if (checkIsArray(val)) {
+      return R.append(true, prev)
+    } else {
+      // If it's an object but not array
+      return R.append(checkContainsArray(val), prev)
+    }
+  }, [])
+  return !R.isEmpty(R.filter(item => item === true, listOfTOrF))
+})
+
 // deepKeysEqual :: {*} -> {*} -> {*}
 export const deepKeysEqual = R.curry((obj1, obj2) => {
-  const shallowKeysEqual = (objA, objB) => {
+  const keysEqual = (objA, objB) => {
     // First see which obj has more keys (otherwise, comparison would not be complete)
     const objWithMoreKeys = R.keys(objA).length >= R.keys(objB).length ? objA : objB
     const objWithLessKeys = R.keys(objA).length < R.keys(objB).length ? objA : objB
     return R.keys(objWithMoreKeys).reduce((prev, key) => {
+      /*
+        obj + obj = Continue recursion
+        obj + arr = F
+        obj + prim = F
+        arr + arr = Special case (allowed to have diff keys)
+        arr + prim = F
+        prim + prim = T
+      */
       const sameKeyExistsInTheOtherObj = !R.isNil(R.prop(key, objWithLessKeys))
+
+      const objAVal = objA[key]
+      const objBVal = objB[key]
+
+      const objAndObj = checkIsObjButNotArray(objAVal) && checkIsObjButNotArray(objBVal)
+      const objAndArr = (checkIsObjButNotArray(objAVal) && checkIsArray(objBVal)) || (checkIsObjButNotArray(objBVal) && checkIsArray(objAVal))
+      const objAndPrim = (checkIsObjButNotArray(objAVal) && checkIsPrimitive(objBVal)) || (checkIsObjButNotArray(objBVal) && checkIsPrimitive(objAVal))
+      const arrAndArr = checkIsArray(objAVal) && checkIsArray(objBVal)
+      const arrAndPrim = (checkIsArray(objAVal) && checkIsPrimitive(objBVal)) || (checkIsArray(objBVal) && checkIsPrimitive(objAVal))
+      const primAndPrim = checkIsPrimitive(objAVal) && checkIsPrimitive(objBVal)
+
       if (sameKeyExistsInTheOtherObj) {
-        const bothValuesAreObjs = R.is(Object, objA[key]) && !R.isArrayLike(objA[key]) && R.is(Object, objB[key]) && !R.isArrayLike(objB[key])
-        if (bothValuesAreObjs) {
-          return R.concat(shallowKeysEqual(objA[key], objB[key]), prev)
-        } else {
+        if (primAndPrim) {
           return R.append(true, prev)
+        } else if (objAndArr || objAndPrim || arrAndPrim) {
+          return R.append(false, prev)
         }
+        // i.e. objAndObj || arrAndArr
+        return R.concat(keysEqual(objAVal, objBVal), prev)
       } else {
-        return R.append(false, prev)
+        // The key here is diff key
+        const diffKeyVal = objWithMoreKeys[key]
+
+        // If the parent obj is not an array, diff key means diff obj so return false
+        if (!checkIsArray(objWithMoreKeys)) { return R.append(false, prev) }
+
+        // This is the special case for arrays; only arrays are allowed to have differing keys
+        // If any of the differing keys have values that contain arrays, return false; otherwise, return true
+        const diffKeyContainsArray = checkContainsArray(diffKeyVal)
+        return diffKeyContainsArray ? R.append(false, prev) : R.append(true, prev)
       }
     }, [])
   }
-  return R.isEmpty(shallowKeysEqual(obj1, obj2).filter(entry => entry === false))
+  return R.isEmpty(keysEqual(obj1, obj2).filter(entry => entry === false))
 })
 
 // deepCopyValues :: {*} -> {*} -> {*}
+// fromObj value persists and toObj key persists
+// EXCEPTION: if the obj is objectified array, then fromObj key persists - this is to allow content creator to add array items
 export const deepCopyValues = R.curry((fromObj, toObj) => {
   const toObjKeys = R.keys(toObj)
   const deepCopy = toObjKeys.reduce((prev, curr) => {
     const valueInFromObj = R.prop(curr, fromObj)
+
     if (!R.isNil(valueInFromObj)) { // if this key exists in fromObj
       if (R.keys(valueInFromObj).length > 0) { // if value of this key is an innumerable
         const valueInToObj = R.prop(curr, prev)
-        if (R.isArrayLike(valueInFromObj)) { // if value of this key is an array, turn it back into array before returning
-          return R.assoc(curr, R.values(deepCopyValues(valueInFromObj, valueInToObj)), prev)
-        } else { // if value of this key is an object
-          return R.assoc(curr, deepCopyValues(valueInFromObj, valueInToObj), prev)
+        if (checkIsObjectifiedArray(valueInFromObj)) {
+          // if the value is an objectified array, fromObj key persists (unlike any other case)
+          const excessKeys = R.symmetricDifference(R.keys(valueInFromObj), R.keys(valueInToObj))
+          if (R.keys(valueInFromObj).length > R.keys(valueInToObj).length) {
+            // if fromObj has more keys, add extra keys to toObj before doing further deep copy
+            const newValueInToObj = excessKeys.reduce((prev, curr) => R.merge(prev, {[curr]: valueInFromObj[curr]}), valueInToObj)
+            return R.assoc(curr, deepCopyValues(valueInFromObj, newValueInToObj), prev)
+          } else if (R.keys(valueInFromObj).length < R.keys(valueInToObj).length) {
+            // if fromObj has less keys, remove excess keys from toObj before doing further deep copy
+            const newValueInToObj = R.omit(excessKeys, valueInToObj)
+            return R.assoc(curr, deepCopyValues(valueInFromObj, newValueInToObj), prev)
+          }
         }
+        return R.assoc(curr, deepCopyValues(valueInFromObj, valueInToObj), prev)
       } else { // if value of this key is a primitive
         return R.assoc(curr, R.prop(curr, fromObj), prev)
       }
@@ -82,11 +203,13 @@ export const deepCopyValues = R.curry((fromObj, toObj) => {
 
 // getUpdatedPageContentFromSchemaChange :: {*} -> {*} -> {*}
 export const getUpdatedPageContentFromSchemaChange = R.curry((currentPageContent, newSchemaObj) => {
+  // TODO: const objectifiedNewSchemaObj = deepObjectifyArrays(newSchemaObj)
   if (R.isNil(currentPageContent)) {
     return newSchemaObj
   } else {
     // only run deepCopyValues if schemaObj has changed
     if (!deepKeysEqual(currentPageContent, newSchemaObj)) {
+      console.log('schemaObj changed!')
       return deepCopyValues(currentPageContent, newSchemaObj)
     } else {
       return null
@@ -111,7 +234,6 @@ export const getPageContent = R.curry((route, rootContent) => {
 
 // replaceContentSchemaValuesWithPlaceholders :: {*} -> {*}
 export const replaceContentSchemaValuesWithPlaceholders = R.curry((contentPlaceholderChar, contentSchema) => {
-  // &#8212
   const shallowUpdateValuesWithPlaceholders = R.curry(obj => {
     return R.mapObjIndexed((value, key) => {
       if (R.either(R.is(String), R.is(Number))(value)) {
@@ -127,7 +249,55 @@ export const replaceContentSchemaValuesWithPlaceholders = R.curry((contentPlaceh
   return shallowUpdateValuesWithPlaceholders(contentSchema)
 })
 
+// deepObjectifyArrays :: {*} -> {*}
+export const deepObjectifyArrays = R.curry(obj => {
+  const objectifyArrays = obj => {
+    const keys = R.keys(obj)
+    return keys.reduce((prev, curr) => {
+      const val = obj[curr]
+      if (R.is(Object, val)) {
+        return R.merge(prev, {[curr]: objectifyArrays(val)})
+      } else {
+        return R.merge(prev, {[curr]: val})
+      }
+    }, {})
+  }
+  return objectifyArrays(obj)
+})
+
+// deepDeobjectifyArrays :: {*} -> {*}
+export const deepDeobjectifyArrays = R.curry(obj => {
+  const deobjectifyArrays = obj => {
+    const keys = R.keys(obj)
+    if (checkIsObjectifiedArray(obj) || R.isArrayLike(obj)) {
+      return keys.reduce((prev, curr) => {
+        const val = obj[curr]
+        if (R.is(Object, val)) {
+          return R.concat(prev, deobjectifyArrays(val))
+        } else {
+          return R.concat(prev, val)
+        }
+      }, [])
+    } else {
+      return keys.reduce((prev, curr) => {
+        const val = obj[curr]
+        if (R.is(Object, val)) {
+          return R.merge(prev, {[curr]: deobjectifyArrays(val)})
+        } else {
+          return R.merge(prev, {[curr]: val})
+        }
+      }, {})
+    }
+  }
+  return deobjectifyArrays(obj)
+})
+
 /* --- IMPURE --------------------------------------------------------------- */
+
+// sendCrossDomainEvent :: {*} -> * -> String -> IMPURE (cross domain event)
+export const sendCrossDomainEvent = (receivingWindow, msg, targetUrl) => {
+  receivingWindow.postMessage(msg, targetUrl)
+}
 
 // updatePageContentOnSchemaChange :: {*} -> String -> {*} -> {*} -> IMPURE (send POST request)
 export const updatePageContentOnSchemaChange = (localStorageObj, route, rootContent, schemaObj) => {
@@ -137,18 +307,21 @@ export const updatePageContentOnSchemaChange = (localStorageObj, route, rootCont
   const pageContent = getPageContent(sanitizedRoute, rootContent)
   const updatedPageContent = getUpdatedPageContentFromSchemaChange(pageContent, schemaObj)
 
-  // Only send if contentSchema has changed
+  // Only send if contentSchema has changed (i.e. keys), but NOT content fields (i.e. values)
   if (!R.isNil(updatedPageContent)) {
     const projectDomain = localStorageObj.getItem('projectDomain')
     const env = localStorageObj.getItem('env')
     const locale = localStorageObj.getItem('locale')
-    const contentUpdateObj = createContentUpdateObj(projectDomain, env, locale, route, updatedPageContent)
 
-    updatePageContent$$(contentUpdateObj).subscribe(
-      dbRes => console.log('Successfully updated pageContent in DB! ', dbRes),
-      err => console.log('Updating pageContent from schema change failed: ', err)
-    )
-    return true
+    if (projectDomain !== 'undefined' && env !== 'undefined' && locale !== 'undefined') {
+      const contentUpdateObj = createContentUpdateObj(projectDomain, env, locale, route, updatedPageContent)
+      updatePageContent$$(contentUpdateObj).subscribe(
+        dbRes => console.log('Successfully updated pageContent in DB! ', dbRes),
+        err => console.log('Updating pageContent from schema change failed: ', err)
+      )
+      return true
+    }
+    return false
   }
   return false
 }
@@ -178,16 +351,16 @@ export const useContentPlaceholder = () => {
 // NO TEST
 // getRootContent :: String -> String -> [*] -> Observable (-> routeContent) + IMPURE (set localStorage)
 export const getRootContent = R.curry((projectDomain, route, options) => {
-  if (isLocalEnv(getCurrentDomain(global.location))) { console.log('In local environment...') }
+  if (checkIsLocalEnv(getCurrentDomain(global.location))) { console.log('In local environment...') }
 
   const currentDomain = getCurrentDomain(global.location)
   const {excludedRoutes = [], contentPlaceholder} = options
 
   // Send a POST request for initial content
-  return getInitContent$$(projectDomain, currentDomain, route, excludedRoutes)
+  const getInitContent$ = getInitContent$$(projectDomain, currentDomain, route, excludedRoutes)
     .startWith({projectDetails: {}})
-    .flatMap(initContentObj => {
-      const {projectDetails, env, locale, isPreview, routeContent} = initContentObj
+    .map(initContentObj => {
+      const {projectDetails, env, locale, routeContent} = initContentObj
 
       // First set localStorage items
       global.localStorage.clear()
@@ -195,25 +368,58 @@ export const getRootContent = R.curry((projectDomain, route, options) => {
       global.localStorage.setItem('projectDetails', JSON.stringify(projectDetails))
       global.localStorage.setItem('projectDomain', projectDetails.projectDomain)
       global.localStorage.setItem('env', env) // prod or staging
-      global.localStorage.setItem('locale', locale) // prod or staging
-      global.localStorage.setItem('isPreview', isPreview)
+      global.localStorage.setItem('locale', locale)
 
-      /*
-        If this is PREVIEW, return the initial routeContent and then:
-          1) Load socket.io client script
-          2) Receive and return subsequent socket.io event for updatedContent
-        Otherwise, return the initial routeContent only
-      */
-      if (isPreview) {
+      // Send preview page ready event to parent
+      // This will cause the parent to send back isPreview event, which will kick off loading of preview script
+      const cmsWindow = global.parent
+      cmsWindow.postMessage('previewPage:ready', '*')
+
+      return routeContent
+    })
+
+  /*
+    To check if it's a PREVIEW:
+      1) Send page ready event to parent window (cms)
+      2) If this receives a cross domain message 'isPreview' back from the parent (cms), then it's PREVIEW.
+    If this is PREVIEW:
+      1) Load socket.io client script
+      2) Receive and return subsequent socket.io event for updatedContent (further routeContent & content field updates)
+  */
+  const getUpdatedContentWS$ = checkIsPreview$
+    .flatMap(e => {
+      if (!R.isNil(e)) {
         console.log('In preview...')
-        const io = require('socket.io-client')
-        const socket = io.connect(config.host + ':' + config.port)
-        return getUpdatedContentWS$$(socket).startWith(routeContent)
+        // Save it in localStorage
+        global.localStorage.setItem('inPreview', 'true')
+
+        // Dynamically load socket.io client script here if it's not already loaded
+        if (typeof(io) === 'undefined') {
+          console.log('Loading socket.io client...')
+          return loadSocketIoClient$
+            .flatMap(() => {
+              console.log('socket.io loaded!')
+              // const socket = io.connect(config.host + ':' + config.port)
+              // Once socket.io client is loaded, report back to the parent (cms)
+              e.source.postMessage('socketio:loaded', e.origin)
+
+              return getUpdatedRouteContentWS$$(socket)
+            })
+        } else {
+          console.log('socket.io client already loaded')
+          // const socket = io.connect(config.host + ':' + config.port)
+          // If socket.io is already loaded, report back to the parent (cms)
+          e.source.postMessage('socketio:loaded', e.origin)
+
+          return getUpdatedRouteContentWS$$(socket)
+        }
       } else {
-        console.log('Not in preview...')
-        return Rx.Observable.return(routeContent)
+        return Rx.Observable.return({})
       }
     })
+
+  return Rx.Observable
+    .merge(getInitContent$, getUpdatedContentWS$)
     .scan(R.merge)
 })
 
@@ -223,7 +429,8 @@ export const setContentSchema = (route, rootContent, schemaObj) => {
   global.localStorage.setItem('contentSchema', JSON.stringify(schemaObj))
   console.log('contentSchema set!!')
   const currentDomain = getCurrentDomain(global.location)
-  updatePageContentOnSchemaChange(global.localStorage, route, rootContent, schemaObj)
+  // objectify arrays in schemaObj before saving
+  updatePageContentOnSchemaChange(global.localStorage, route, rootContent, deepObjectifyArrays(schemaObj))
 }
 
 // NO TEST
@@ -232,15 +439,14 @@ export const getContent = R.curry((route, rootContent) => {
   const contentSchema = JSON.parse(global.localStorage.getItem('contentSchema'))
 
   // Show the content immediately from contentSchema if rootContent hasn't arrived
-  if (R.isNil(rootContent)) {
+  if (R.isNil(rootContent) || R.isEmpty(rootContent)) {
     // Replace contentSchema values with placeholders if contentPlaceholder is true
-    console.log('Waiting for rootContent to arrive...')
     if (global.localStorage.getItem('contentPlaceholder') !== 'undefined') {
       const contentPlaceholderChar = global.localStorage.getItem('contentPlaceholder')
-      console.log('contentPlaceholder: ', contentPlaceholderChar)
       return replaceContentSchemaValuesWithPlaceholders(contentPlaceholderChar, contentSchema)
     } else {
-      return contentSchema
+      // Convert the objectified arrays back into real arrays before returning (only needed for getContent)
+      return deepDeobjectifyArrays(contentSchema)
     }
   }
 
@@ -249,5 +455,22 @@ export const getContent = R.curry((route, rootContent) => {
   const pageContent = getPageContent(route, rootContent)
   const updatedPageContent = getUpdatedPageContentFromSchemaChange(pageContent, contentSchema)
 
-  return R.isNil(updatedPageContent) ? pageContent : updatedPageContent
+  // TODO
+  /*
+    If preview, use the override content for field updates
+      1) If isPreview, subscribe to field update observable
+      2) On field update, accumulate the value for pageContent in localStorage and return that
+  */
+  if (global.localStorage.getItem('inPreview') === 'true') {
+    const socket = io.connect(config.host + ':' + config.port)
+    getUpdatedContentFieldWS$$(socket).subscribe(fieldObj => {
+      const {projectRoute, keyPath, value} = fieldObj
+      if (route === projectRoute) {
+
+      }
+    })
+  }
+
+  // Convert the objectified arrays back into real arrays before returning (only needed for getContent)
+  return R.isNil(updatedPageContent) ? deepDeobjectifyArrays(pageContent) : deepDeobjectifyArrays(updatedPageContent)
 })
