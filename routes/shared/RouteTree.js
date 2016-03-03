@@ -1,6 +1,6 @@
 import React from 'react'
-import {Link} from 'react-router'
 import R from 'ramda'
+import {Link} from 'react-router'
 import {createRouteTree} from '../../modules/core/content'
 
 const RouteTree = React.createClass({
@@ -38,17 +38,24 @@ const RouteTree = React.createClass({
     }
     return shallowRenderRouteTree(routeTree)
   },
+  shouldComponentUpdate(nextProps) {
+    return !R.equals(nextProps.rootContent, this.props.rootContent)
+  },
   render() {
     const {rootContent} = this.props
     const routeTree = createRouteTree(rootContent)
     console.log('rootContent: ', rootContent)
     console.log('routeTree: ', routeTree)
     return (
-      <div className="col col-3 bg-right-before-midnight white py2" style={{height: 100+'vh'}}>
+      <div className="bg-right-before-midnight white py2" style={{width: 100+'%', height: 100+'vh'}}>
         {this.renderRouteTree(routeTree)}
       </div>
     )
   }
 })
+
+RouteTree.propTypes = {
+  rootContent: React.PropTypes.object.isRequired
+}
 
 export default RouteTree

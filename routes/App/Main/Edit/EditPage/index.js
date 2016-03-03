@@ -3,7 +3,8 @@ import R from 'ramda'
 import TopMenu from 'TopMenu'
 import ContentInputs from './components/ContentInputs'
 import Preview from './components/Preview'
-import PageLoading from 'PageLoading'
+import SideMenu from 'SideMenu'
+import RouteTreeSideMenu from 'RouteTreeSideMenu'
 import config from '../../../../../client-config'
 import {getProjectRoute, getPageContent, getCurrentDomain, checkIsLocalEnv} from 'core/content'
 import {createStateIds, getElemState} from 'core/state'
@@ -27,17 +28,20 @@ const EditPage = React.createClass({
     return isLocalEnv ? config.userLocalHost + ':' + config.userLocalPort : R.path([locale, env + 'Domain'], localeMap)
   },
   componentDidMount() {
+    console.log('EditPage component did mount')
     // When preview is ready, send a request for routeContent to kick off fieldUpdates observables
     checkSocketIoLoadedInPreview$$(this.getProjectUrl())
       .subscribe(e => {
-        console.log('Preview is ready; request routeContent to kick off fieldUpdates')
-        const projectDomain = window.localStorage.getItem('projectDomain')
-        const env = window.localStorage.getItem('env')
-        const locale = window.localStorage.getItem('locale')
-        const route = '/'
-        if (!R.isNil(projectDomain) && !R.isNil(env) && !R.isNil(locale)) {
-          // send request for new content
-          requestRouteContent({projectDomain, env, locale, route})
+        if (!R.isNil(e)) {
+          console.log('Preview is ready; request routeContent to kick off fieldUpdates')
+          const projectDomain = window.localStorage.getItem('projectDomain')
+          const env = window.localStorage.getItem('env')
+          const locale = window.localStorage.getItem('locale')
+          const route = '/'
+          if (!R.isNil(projectDomain) && !R.isNil(env) && !R.isNil(locale)) {
+            // send request for new content
+            requestRouteContent({projectDomain, env, locale, route})
+          }
         }
       })
   },
@@ -53,26 +57,43 @@ const EditPage = React.createClass({
     return (
       <div>
         <TopMenu rootState={rootState} />
-        <div className="relative" style={{height: 100+'vh'}}>
-          <div className="absolute top-0 bottom-0 left-0"
-                style={{
-                  width: 75+'%',
-                  overflow: 'auto'
-                }}
-          >
-            <Preview projectUrl={projectUrl} previewUrl={previewUrl} />
-          </div>
-          <div className="absolute top-0 right-0 bottom-0 border-left"
-                style={{
-                  width: 25+'%',
-                  overflow: 'auto',
-                  borderWidth: '2px'
-                }}
-          >
-            <ContentInputs projectRoute={projectRoute} pageContent={pageContent} />
+        <div className="relative flex">
+
+          {/* default thin menu */}
+          <SideMenu rootContent={rootContent} rootState={rootState} />
+          {/* end: default thin menu */}
+
+          {/* hidden routeTree menu */}
+          <RouteTreeSideMenu rootContent={rootContent} rootState={rootState} />
+          {/* end: hidden routeTree menu */}
+
+          <div className="relative" style={{width: 100+'%', height: 100+'vh'}}>
+
+            {/* preview */}
+            <div className="absolute top-0 bottom-0 left-0"
+                  style={{
+                    width: 75+'%',
+                    overflow: 'auto'
+                  }}
+            >
+              <Preview projectUrl={projectUrl} previewUrl={previewUrl} />
+            </div>
+            {/* end: preview */}
+
+            {/* content inputs */}
+            <div className="absolute top-0 right-0 bottom-0 border-left"
+                  style={{
+                    width: 25+'%',
+                    overflow: 'auto',
+                    borderWidth: '2px'
+                  }}
+            >
+              <ContentInputs projectRoute={projectRoute} pageContent={pageContent} />
+            </div>
+            {/* end: content inputs */}
+
           </div>
         </div>
-        {(() => {if (elemState.pageLoading) { return <PageLoading /> }})()}
       </div>
     )
   }

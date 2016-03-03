@@ -62,8 +62,13 @@ export const getUpdatedContentFieldWS$$ = socket => {
 
     if (!cancelled) {
       socket.on('contentField:updateFromServer', fieldObj => {
-        console.log('Content field update received!!!')
         // fieldObj: {projectRoute, keyPath, value}
+        console.log('Content field update received!!!')
+
+        // For PREVIEW: First accumulate the contentField updates and save it in localStorage for rendering for PREVIEW
+        const accumulatedContentFieldUpdates = JSON.parse(global.localStorage.getItem('accumulatedContentFieldUpdates')) || []
+        global.localStorage.setItem('accumulatedContentFieldUpdates', JSON.stringify(R.append(fieldObj, accumulatedContentFieldUpdates)))
+
         observer.onNext(fieldObj)
       })
     }
@@ -75,16 +80,16 @@ export const getUpdatedContentFieldWS$$ = socket => {
   })
 }
 
-// export const getUpdatedContentWS$$ = socket => {
-//   return Rx.Observable.combineLatest(
-//     getUpdatedRouteContentWS$$(socket),
-//     getUpdatedContentFieldWS$$(socket)
-//   ).map(change => {
-//     const routeContent = change[0]
-//     const field = change[1]
-//     return R.assocPath(R.prepend(field.projectRoute, field.keyPath), field.value, routeContent)
-//   })
-// }
+export const getUpdatedContentWS$$ = socket => {
+  return Rx.Observable.combineLatest(
+    getUpdatedRouteContentWS$$(socket),
+    getUpdatedContentFieldWS$$(socket)
+  ).map(change => {
+    const routeContent = change[0]
+    const {projectRoute, keyPath, value} = change[1]
+    return R.assocPath(R.prepend(projectRoute, keyPath), value, routeContent)
+  })
+}
 
 // updatePageContent$$ :: {*} -> {*}
 export const updatePageContent$$ = contentUpdateObj => {

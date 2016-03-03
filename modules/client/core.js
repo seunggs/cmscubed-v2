@@ -1,14 +1,7 @@
 import R from 'ramda'
 import Rx from 'rx-lite'
 import config from './config'
-import {
-  updatePageContent$$,
-  getInitContent$$,
-  getUpdatedRouteContentWS$$,
-  getUpdatedContentFieldWS$$,
-  checkIsPreview$,
-  loadSocketIoClient$
-} from './observables'
+import {updatePageContent$$, getInitContent$$, getUpdatedContentWS$$, checkIsPreview$, loadSocketIoClient$} from './observables'
 
 /* --- PURE ----------------------------------------------------------------- */
 
@@ -203,9 +196,8 @@ export const deepCopyValues = R.curry((fromObj, toObj) => {
 
 // getUpdatedPageContentFromSchemaChange :: {*} -> {*} -> {*}
 export const getUpdatedPageContentFromSchemaChange = R.curry((currentPageContent, newSchemaObj) => {
-  // TODO: const objectifiedNewSchemaObj = deepObjectifyArrays(newSchemaObj)
   if (R.isNil(currentPageContent)) {
-    return newSchemaObj
+    return deepObjectifyArrays(newSchemaObj)
   } else {
     // only run deepCopyValues if schemaObj has changed
     if (!deepKeysEqual(currentPageContent, newSchemaObj)) {
@@ -390,8 +382,7 @@ export const getRootContent = R.curry((projectDomain, route, options) => {
     .flatMap(e => {
       if (!R.isNil(e)) {
         console.log('In preview...')
-        // Save it in localStorage
-        global.localStorage.setItem('inPreview', 'true')
+        global.localStorage.setItem('isPreview', 'true')
 
         // Dynamically load socket.io client script here if it's not already loaded
         if (typeof(io) === 'undefined') {
@@ -399,19 +390,21 @@ export const getRootContent = R.curry((projectDomain, route, options) => {
           return loadSocketIoClient$
             .flatMap(() => {
               console.log('socket.io loaded!')
-              // const socket = io.connect(config.host + ':' + config.port)
+              const socket = io.connect(config.host + ':' + config.port)
+
               // Once socket.io client is loaded, report back to the parent (cms)
               e.source.postMessage('socketio:loaded', e.origin)
 
-              return getUpdatedRouteContentWS$$(socket)
+              return getUpdatedContentWS$$(socket)
             })
         } else {
           console.log('socket.io client already loaded')
-          // const socket = io.connect(config.host + ':' + config.port)
-          // If socket.io is already loaded, report back to the parent (cms)
-          e.source.postMessage('socketio:loaded', e.origin)
+          const socket = io.connect(config.host + ':' + config.port)
 
-          return getUpdatedRouteContentWS$$(socket)
+          // If socket.io is already loaded, report back to the parent (cms)
+          // e.source.postMessage('socketio:loaded', e.origin)
+
+          return getUpdatedContentWS$$(socket)
         }
       } else {
         return Rx.Observable.return({})
@@ -426,11 +419,12 @@ export const getRootContent = R.curry((projectDomain, route, options) => {
 // NO TEST
 // setContentSchema :: String -> {*} -> {*} -> IMPURE
 export const setContentSchema = (route, rootContent, schemaObj) => {
-  global.localStorage.setItem('contentSchema', JSON.stringify(schemaObj))
+  const objectifiedSchemaObj = deepObjectifyArrays(schemaObj)
+  global.localStorage.setItem('contentSchema', JSON.stringify(objectifiedSchemaObj))
   console.log('contentSchema set!!')
   const currentDomain = getCurrentDomain(global.location)
   // objectify arrays in schemaObj before saving
-  updatePageContentOnSchemaChange(global.localStorage, route, rootContent, deepObjectifyArrays(schemaObj))
+  updatePageContentOnSchemaChange(global.localStorage, route, rootContent, objectifiedSchemaObj)
 }
 
 // NO TEST
@@ -440,13 +434,14 @@ export const getContent = R.curry((route, rootContent) => {
 
   // Show the content immediately from contentSchema if rootContent hasn't arrived
   if (R.isNil(rootContent) || R.isEmpty(rootContent)) {
+    const deobjectifiedContentSchema = deepDeobjectifyArrays(contentSchema)
     // Replace contentSchema values with placeholders if contentPlaceholder is true
     if (global.localStorage.getItem('contentPlaceholder') !== 'undefined') {
       const contentPlaceholderChar = global.localStorage.getItem('contentPlaceholder')
-      return replaceContentSchemaValuesWithPlaceholders(contentPlaceholderChar, contentSchema)
+      return replaceContentSchemaValuesWithPlaceholders(contentPlaceholderChar, deobjectifiedContentSchema)
     } else {
       // Convert the objectified arrays back into real arrays before returning (only needed for getContent)
-      return deepDeobjectifyArrays(contentSchema)
+      return deobjectifiedContentSchema
     }
   }
 
@@ -454,23 +449,18 @@ export const getContent = R.curry((route, rootContent) => {
   // show the updatedContent if contentSchema changed (i.e. optimistic update)
   const pageContent = getPageContent(route, rootContent)
   const updatedPageContent = getUpdatedPageContentFromSchemaChange(pageContent, contentSchema)
+  const finalPageContent = R.isNil(updatedPageContent) ? pageContent : updatedPageContent
 
-  // TODO
-  /*
-    If preview, use the override content for field updates
-      1) If isPreview, subscribe to field update observable
-      2) On field update, accumulate the value for pageContent in localStorage and return that
-  */
-  if (global.localStorage.getItem('inPreview') === 'true') {
-    const socket = io.connect(config.host + ':' + config.port)
-    getUpdatedContentFieldWS$$(socket).subscribe(fieldObj => {
-      const {projectRoute, keyPath, value} = fieldObj
-      if (route === projectRoute) {
-
-      }
-    })
+  // If PREVIEW, accumulate the field update in localStorage and use that to render instead
+  if (global.localStorage.getItem('isPreview') === 'true') {
+    const accumulatedContentFieldUpdates = JSON.parse(global.localStorage.getItem('accumulatedContentFieldUpdates'))
+    const updatedFinalPageContent = accumulatedContentFieldUpdates.reduce((prev, fieldObj) => {
+      const {keyPath, value} = fieldObj
+      return R.assocPath(keyPath, value, prev)
+    }, finalPageContent)
+    return deepDeobjectifyArrays(updatedFinalPageContent)
   }
 
   // Convert the objectified arrays back into real arrays before returning (only needed for getContent)
-  return R.isNil(updatedPageContent) ? deepDeobjectifyArrays(pageContent) : deepDeobjectifyArrays(updatedPageContent)
+  return deepDeobjectifyArrays(finalPageContent)
 })

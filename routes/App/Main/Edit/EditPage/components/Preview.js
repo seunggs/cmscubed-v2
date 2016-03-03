@@ -27,7 +27,9 @@ const Preview = React.createClass({
     const iframeStr = '<iframe id="preview" src="//' + previewUrl + '" class="preview"></iframe>'
 
     return (
-      <div dangerouslySetInnerHTML={{__html: iframeStr}}></div>
+      <div className="p2">
+        <div dangerouslySetInnerHTML={{__html: iframeStr}} />
+      </div>
     )
   }
 })

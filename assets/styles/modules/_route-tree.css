@@ -1,3 +1,7 @@
+.routeTreeWrapper {
+  transform: translateX(-280px);
+}
+
 .routeTreeItem {
   color: var(--white);
   cursor: pointer;

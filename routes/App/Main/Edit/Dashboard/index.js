@@ -11,7 +11,9 @@ const Dashboard = React.createClass({
     return (
       <div className="bg-before-midnight" style={{height: '100vh'}}>
         <TopMenu rootState={rootState} />
-        <RouteTree rootContent={rootContent} />
+        <div className="col col-3">
+          <RouteTree rootContent={rootContent} />
+        </div>
       </div>
     )
   }
